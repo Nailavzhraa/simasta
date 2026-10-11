@@ -23,231 +23,78 @@
     </h1>
 
     <p>
-        Kelola dokumen persyaratan magang dan pantau
-        status verifikasinya.
+        Lengkapi data berikut untuk mengajukan
+        permohonan magang di BPS Kota Batu.
     </p>
 
 </div>
 
 
-<!-- INFORMASI -->
+<!-- INFORMASI MAHASISWA -->
 
-<div class="card document-info">
-
-    <div class="info-icon">
-        📄
-    </div>
-
-    <div>
-
-        <h3>
-            Kelengkapan Dokumen
-        </h3>
-
-        <p>
-            Pastikan seluruh dokumen yang diperlukan
-            telah diunggah dan sesuai dengan persyaratan.
-        </p>
-
-    </div>
-
-</div>
-
-
-<br>
-
-
-<!-- DAFTAR DOKUMEN -->
-
-<div class="card">
+<div class="card form-card">
 
     <h2>
-        Daftar Dokumen
+        Data Mahasiswa
     </h2>
 
     <p class="form-description">
-        Berikut merupakan dokumen yang diperlukan
-        dalam proses pengajuan magang.
+        Pastikan data yang kamu masukkan sudah sesuai
+        dengan data akademik.
     </p>
 
+    <div class="form-grid">
 
-    <div class="document-list">
+        <div class="form-group">
 
+            <label>
+                Nama Lengkap
+            </label>
 
-        <!-- SURAT PENGANTAR -->
-
-        <div class="document-item">
-
-            <div class="document-icon">
-                📄
-            </div>
-
-            <div class="document-detail">
-
-                <h3>
-                    Surat Pengantar
-                </h3>
-
-                <p>
-                    Surat pengantar resmi dari perguruan tinggi.
-                </p>
-
-                <span class="status status-warning">
-                    Belum Diunggah
-                </span>
-
-            </div>
-
-            <div class="document-action">
-
-                <button class="btn-primary">
-                    Upload
-                </button>
-
-            </div>
+            <input
+                type="text"
+                placeholder="Masukkan nama lengkap">
 
         </div>
 
 
-        <!-- CV -->
+        <div class="form-group">
 
-        <div class="document-item">
+            <label>
+                NIM
+            </label>
 
-            <div class="document-icon">
-                📄
-            </div>
-
-            <div class="document-detail">
-
-                <h3>
-                    Curriculum Vitae (CV)
-                </h3>
-
-                <p>
-                    Curriculum Vitae mahasiswa.
-                </p>
-
-                <span class="status status-warning">
-                    Belum Diunggah
-                </span>
-
-            </div>
-
-            <div class="document-action">
-
-                <button class="btn-primary">
-                    Upload
-                </button>
-
-            </div>
+            <input
+                type="text"
+                placeholder="Masukkan NIM">
 
         </div>
 
 
-        <!-- PROPOSAL -->
+        <div class="form-group">
 
-        <div class="document-item">
+            <label>
+                Perguruan Tinggi
+            </label>
 
-            <div class="document-icon">
-                📄
-            </div>
-
-            <div class="document-detail">
-
-                <h3>
-                    Proposal Magang
-                </h3>
-
-                <p>
-                    Proposal kegiatan magang mahasiswa.
-                </p>
-
-                <span class="status status-warning">
-                    Belum Diunggah
-                </span>
-
-            </div>
-
-            <div class="document-action">
-
-                <button class="btn-primary">
-                    Upload
-                </button>
-
-            </div>
+            <input
+                type="text"
+                placeholder="Masukkan nama perguruan tinggi">
 
         </div>
 
 
-        <!-- KHS -->
+        <div class="form-group">
 
-        <div class="document-item">
+            <label>
+                Program Studi
+            </label>
 
-            <div class="document-icon">
-                📄
-            </div>
-
-            <div class="document-detail">
-
-                <h3>
-                    KHS / Transkrip Nilai
-                </h3>
-
-                <p>
-                    Dokumen akademik terbaru mahasiswa.
-                </p>
-
-                <span class="status status-warning">
-                    Belum Diunggah
-                </span>
-
-            </div>
-
-            <div class="document-action">
-
-                <button class="btn-primary">
-                    Upload
-                </button>
-
-            </div>
+            <input
+                type="text"
+                placeholder="Masukkan program studi">
 
         </div>
-
-
-        <!-- DOKUMEN PENDUKUNG -->
-
-        <div class="document-item">
-
-            <div class="document-icon">
-                📄
-            </div>
-
-            <div class="document-detail">
-
-                <h3>
-                    Dokumen Pendukung
-                </h3>
-
-                <p>
-                    Dokumen tambahan apabila diperlukan.
-                </p>
-
-                <span class="status status-warning">
-                    Belum Diunggah
-                </span>
-
-            </div>
-
-            <div class="document-action">
-
-                <button class="btn-primary">
-                    Upload
-                </button>
-
-            </div>
-
-        </div>
-
 
     </div>
 
@@ -257,40 +104,268 @@
 <br>
 
 
-<!-- KETERANGAN -->
+<!-- INFORMASI MAGANG -->
 
-<div class="card">
+<div class="card form-card">
 
     <h2>
-        Ketentuan Dokumen
+        Informasi Magang
     </h2>
 
-    <ul class="document-rules">
+    <p class="form-description">
+        Isi informasi mengenai rencana pelaksanaan magang.
+    </p>
 
-        <li>
-            Dokumen harus dalam format PDF.
-        </li>
 
-        <li>
-            Dokumen harus dapat dibaca dengan jelas.
-        </li>
+    <div class="form-grid">
 
-        <li>
-            Pastikan dokumen yang diunggah merupakan
-            dokumen terbaru.
-        </li>
+        <div class="form-group">
 
-        <li>
-            Ukuran file maksimal mengikuti ketentuan
-            yang ditetapkan oleh BPS Kota Batu.
-        </li>
+            <label>
+                Unit/Bagian yang Dituju
+            </label>
 
-        <li>
-            Dokumen yang ditolak dapat diperbaiki dan
-            diunggah kembali.
-        </li>
+            <select>
 
-    </ul>
+                <option value="">
+                    Pilih unit/bagian
+                </option>
+
+                <option>
+                    Subbagian Umum
+                </option>
+
+                <option>
+                    Statistik Sosial
+                </option>
+
+                <option>
+                    Statistik Produksi
+                </option>
+
+                <option>
+                    Statistik Distribusi
+                </option>
+
+                <option>
+                    Neraca Wilayah dan Analisis Statistik
+                </option>
+
+                <option>
+                    Lainnya
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>
+                Bidang/Posisi Magang
+            </label>
+
+            <input
+                type="text"
+                placeholder="Contoh: Pengembangan Sistem Informasi">
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>
+                Tanggal Mulai
+            </label>
+
+            <input
+                type="date">
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>
+                Tanggal Selesai
+            </label>
+
+            <input
+                type="date">
+
+        </div>
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Tujuan Magang
+        </label>
+
+        <textarea
+            rows="5"
+            placeholder="Jelaskan tujuan pelaksanaan magang..."></textarea>
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Keterangan Tambahan
+        </label>
+
+        <textarea
+            rows="4"
+            placeholder="Masukkan keterangan tambahan jika diperlukan..."></textarea>
+
+    </div>
+
+</div>
+
+
+<br>
+
+
+<!-- DOKUMEN -->
+
+<div class="card form-card">
+
+    <h2>
+        Dokumen Persyaratan
+    </h2>
+
+    <p class="form-description">
+        Upload dokumen yang diperlukan dalam format PDF.
+    </p>
+
+
+    <div class="form-group">
+
+        <label>
+            Surat Pengantar
+        </label>
+
+        <input
+            type="file"
+            accept=".pdf">
+
+        <small>
+            Format PDF, maksimal 5 MB.
+        </small>
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Curriculum Vitae (CV)
+        </label>
+
+        <input
+            type="file"
+            accept=".pdf">
+
+        <small>
+            Format PDF, maksimal 5 MB.
+        </small>
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Proposal Magang
+        </label>
+
+        <input
+            type="file"
+            accept=".pdf">
+
+        <small>
+            Format PDF, maksimal 5 MB.
+        </small>
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label>
+            Dokumen Pendukung
+        </label>
+
+        <input
+            type="file"
+            accept=".pdf">
+
+        <small>
+            Format PDF, maksimal 5 MB.
+        </small>
+
+    </div>
+
+</div>
+
+
+<br>
+
+
+<!-- PERNYATAAN -->
+
+<div class="card form-card">
+
+    <h2>
+        Pernyataan
+    </h2>
+
+    <div class="checkbox-group">
+
+        <input
+            type="checkbox"
+            id="agreement">
+
+        <label for="agreement">
+
+            Saya menyatakan bahwa data dan dokumen
+            yang saya berikan adalah benar dan dapat
+            dipertanggungjawabkan.
+
+        </label>
+
+    </div>
+
+</div>
+
+
+<br>
+
+
+<!-- ACTION -->
+
+<div class="form-actions">
+
+    <button
+        type="button"
+        class="btn-secondary">
+
+        Simpan Draft
+
+    </button>
+
+
+    <button
+        type="button"
+        class="btn-primary">
+
+        Kirim Pengajuan
+
+    </button>
 
 </div>
 

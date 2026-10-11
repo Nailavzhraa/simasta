@@ -1,82 +1,70 @@
 <?php
 
 use App\Http\Controllers\Admin\MahasiswaController;
-use Illuminate\Support\Facades\Route;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return view('home');
-});
+Route::get('/', fn () => view('home'));
 
 /*
 |--------------------------------------------------------------------------
-| AUTH
+| AUTH (hanya untuk yang belum login)
 |--------------------------------------------------------------------------
 */
 
-Route::get('/login', function () {
-    return view('auth.login');
-});
+Route::middleware('guest')->group(function () {
 
-Route::post('/login', function (Request $request) {
+    Route::get('/login', fn () => view('auth.index'))->name('login');
 
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    Route::post('/login', function (Request $request) {
 
-    if (Auth::attempt($credentials)) {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-        $request->session()->regenerate();
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
 
-        $user = Auth::user();
-
-        if ($user->role === 'admin') {
-            return redirect('/admin/dashboard');
+            return match (Auth::user()->role) {
+                'admin' => redirect('/admin/dashboard'),
+                'pembimbing' => redirect('/pembimbing/dashboard'),
+                default => redirect('/mahasiswa/dashboard'),
+            };
         }
 
-        if ($user->role === 'pembimbing') {
-            return redirect('/pembimbing/dashboard');
-        }
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ])->onlyInput('email');
+    });
 
-        return redirect('/mahasiswa/dashboard');
-    }
+    Route::get('/register', fn () => view('auth.index'));
 
-    return back()->withErrors([
-        'email' => 'Email atau password salah.',
-    ])->onlyInput('email');
+    Route::post('/register', function (Request $request) {
 
-});
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8|confirmed',
+        ]);
 
-Route::get('/register', function () {
-    return view('auth.register');
-});
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'], // otomatis di-hash lewat cast 'hashed' di model User
+            'role' => 'mahasiswa',
+        ]);
 
-Route::post('/register', function (\Illuminate\Http\Request $request) {
-
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:8|confirmed',
-    ]);
-
-    \App\Models\User::create([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-        'password' => $validated['password'],
-        'role' => 'mahasiswa',
-    ]);
-
-    return redirect('/login')->with(
-        'success',
-        'Registrasi berhasil. Silakan login.'
-    );
+        return redirect('/login')->with('success', 'Registrasi berhasil. Silakan login.');
+    });
 });
 
 /*
@@ -86,105 +74,65 @@ Route::post('/register', function (\Illuminate\Http\Request $request) {
 */
 
 Route::post('/logout', function (Request $request) {
-
     Auth::logout();
-
     $request->session()->invalidate();
-
     $request->session()->regenerateToken();
 
-    return redirect('/login')->with(
-        'success',
-        'Anda berhasil logout.'
-    );
-
-});
+    return redirect('/login')->with('success', 'Anda berhasil logout.');
+})->middleware('auth');
 
 /*
 |--------------------------------------------------------------------------
 | MAHASISWA
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
-});
 
-Route::get('/mahasiswa/dashboard', function () {
-    return view('mahasiswa.dashboard');
-});
-
-Route::get('/mahasiswa/profil', function () {
-    return view('mahasiswa.profil');
-
-});
-
-Route::get('/mahasiswa/pengajuan', function () {
-    return view('mahasiswa.pengajuan');
-
-});
-
-Route::get('/mahasiswa/dokumen', function () {
-    return view('mahasiswa.dokumen');
-
-});
-
-Route::get('/mahasiswa/penempatan', function () {
-    return view('mahasiswa.penempatan');
-
-});
-
-Route::get('/mahasiswa/logbook', function () {
-    return view('mahasiswa.logbook');
-
-});
-
-Route::get('/mahasiswa/penilaian', function () {
-    return view('mahasiswa.penilaian');
-});
+Route::middleware(['auth', 'role:mahasiswa'])
+    ->prefix('mahasiswa')
+    ->name('mahasiswa.')
+    ->group(function () {
+        Route::get('/dashboard', fn () => view('mahasiswa.dashboard'))->name('dashboard');
+        Route::get('/profil', fn () => view('mahasiswa.profil'))->name('profil');
+        Route::get('/dokumen', fn () => view('mahasiswa.dokumen'))->name('dokumen');
+        Route::get('/penempatan', fn () => view('mahasiswa.penempatan'))->name('penempatan');
+        Route::get('/logbook', fn () => view('mahasiswa.logbook'))->name('logbook');
+        Route::get('/penilaian', fn () => view('mahasiswa.penilaian'))->name('penilaian');
+        Route::get('bantuan',    fn () => view('mahasiswa.bantuan'))->name('mahasiswa.bantuan');
+        Route::get('pengumuman', fn () => view('mahasiswa.pengumuman'))->name('mahasiswa.pengumuman');
+    });
 
 /*
 |--------------------------------------------------------------------------
 | ADMIN
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin'])->group(function () {
-});
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
-});
 
-Route::resource('/admin/mahasiswa', MahasiswaController::class)
-    ->names('admin.mahasiswa');
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
 
-Route::get('/admin/pengajuan', function () {
-    return view('admin.pengajuan.index');
-});
+        // nama route jadi admin.mahasiswa.index, admin.mahasiswa.create, dst.
+        Route::resource('mahasiswa', MahasiswaController::class);
 
-Route::get('/admin/pembimbing', function () {
-    return view('admin.pembimbing.index');
-});
+        Route::get('/pengajuan', fn () => view('admin.pengajuan.index'))->name('pengajuan.index');
+        Route::get('/pembimbing', fn () => view('admin.pembimbing.index'))->name('pembimbing.index');
+        Route::get('/penempatan', fn () => view('admin.penempatan.index'))->name('penempatan.index');
+        Route::get('/logbook', fn () => view('admin.logbook.index'))->name('logbook.index');
+        Route::get('/penilaian', fn () => view('admin.penilaian.index'))->name('penilaian.index');
+        Route::get('/laporan', fn () => view('admin.laporan.index'))->name('laporan.index');
+    });
 
-Route::get('/admin/penempatan', function () {
-    return view('admin.penempatan.index');
-});
-
-Route::get('/admin/logbook', function () {
-    return view('admin.logbook.index');
-});
-
-Route::get('/admin/penilaian', function () {
-    return view('admin.penilaian.index');
-});
-
-Route::get('/admin/laporan', function () {
-    return view('admin.laporan.index');
-});
 /*
 |--------------------------------------------------------------------------
 | PEMBIMBING
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:pembimbing'])->group(function () {
-});
-Route::get('/pembimbing/dashboard', function () {
-    return view('pembimbing.dashboard');
-});
+
+Route::middleware(['auth', 'role:pembimbing'])
+    ->prefix('pembimbing')
+    ->name('pembimbing.')
+    ->group(function () {
+        Route::get('/dashboard', fn () => view('pembimbing.dashboard'))->name('dashboard');
+    });

@@ -10,15 +10,27 @@ class Mahasiswa extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'nama',
         'nim',
         'email',
         'no_telepon',
+        'no_wa',
         'perguruan_tinggi',
         'program_studi',
         'semester',
         'tahun_angkatan',
         'alamat',
+        'kelurahan_kampus',
+        'kecamatan_kampus',
         'kota',
+        'dosen_pembimbing',
+        'no_telp_dosen',
+        'no_wa_dosen',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

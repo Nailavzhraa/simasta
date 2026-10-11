@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -17,11 +19,6 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -30,7 +27,7 @@ class User extends Authenticatable
         ];
     }
 
-        public function isMahasiswa()
+    public function isMahasiswa()
     {
         return $this->role === 'mahasiswa';
     }
@@ -43,5 +40,23 @@ class User extends Authenticatable
     public function isPembimbing()
     {
         return $this->role === 'pembimbing';
+    }
+
+    // Relasi: 1 mahasiswa punya 1 pengajuan magang
+    public function pengajuan(): HasOne
+    {
+        return $this->hasOne(Pengajuan::class);
+    }
+
+    // Relasi: 1 akun punya 1 data mahasiswa (diisi saat daftar)
+    public function mahasiswa(): HasOne
+    {
+        return $this->hasOne(Mahasiswa::class);
+    }
+
+    // Relasi: 1 akun bisa punya OTP (dipakai verifikasi email)
+    public function otps(): HasMany
+    {
+        return $this->hasMany(EmailOtp::class);
     }
 }

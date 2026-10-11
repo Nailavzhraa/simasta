@@ -75,11 +75,12 @@
 
         /* MAIN */
 
-        .main {
-            margin-left: 250px;
+       .main {
+    margin-left: var(--sb-w, 250px);
+    transition: margin-left .3s ease;
 
-            min-height: 100vh;
-        }
+    min-height: 100vh;
+}
 
         /* TOPBAR */
 
@@ -1288,13 +1289,8 @@ table tbody tr:hover {
 
 @media (max-width: 900px) {
 
-    .sidebar {
-        width: 210px;
-    }
-
-    .main {
-        margin-left: 210px;
-    }
+    :root { --sb-w: 210px; }
+    html.sb-collapsed { --sb-w: 78px; }
 
     .card-grid {
         grid-template-columns:
@@ -1305,11 +1301,12 @@ table tbody tr:hover {
 
 @media (max-width: 600px) {
 
-    .sidebar {
+    .mhs-side {
         display: none;
     }
 
-    .main {
+    .main,
+    html.sb-collapsed .main {
         margin-left: 0;
     }
 

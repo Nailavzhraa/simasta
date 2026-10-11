@@ -12,9 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-         $middleware->alias([
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-    ]);
+
+        // Alias middleware untuk pembatasan akses per role
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
+        // Kalau user yang sudah login membuka /login atau /register,
+        // arahkan ke dashboard sesuai role-nya
+        $middleware->redirectUsersTo(function (Request $request) {
+            return match ($request->user()->role) {
+                'admin' => '/admin/dashboard',
+                'pembimbing' => '/pembimbing/dashboard',
+                default => '/mahasiswa/dashboard',
+            };
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

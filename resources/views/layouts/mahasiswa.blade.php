@@ -11,7 +11,7 @@
         ['Presensi',                'mahasiswa/presensi',   'bi-geo-alt',              !$diterima],
         ['Posisi Magang',           'mahasiswa/penempatan', 'bi-people',               !$diterima],
         ['Logbook',                 'mahasiswa/logbook',    'bi-journal-text',         !$diterima],
-        ['Penilaian Perilaku Kerja','mahasiswa/penilaian',  'bi-clipboard-check',      !$diterima],
+        ['Penilaian & Sertifikat',  'mahasiswa/penilaian',  'bi-clipboard-check',      !$diterima],
         ['Profil',                  'mahasiswa/profil',     'bi-person',               false],
         ['Bantuan',                 'mahasiswa/bantuan',    'bi-question-circle',      false],
         ['Pengumuman',              'mahasiswa/pengumuman', 'bi-megaphone',            false],

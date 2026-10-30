@@ -27,6 +27,14 @@ class Mahasiswa extends Model
         'dosen_pembimbing',
         'no_telp_dosen',
         'no_wa_dosen',
+        // tambahan untuk halaman profil
+        'nik',
+        'jenis_kelamin',
+        'alamat_ktp',
+        'provinsi',
+        'kecamatan',
+        'kelurahan',
+        'alamat_kampus',
     ];
 
     public function user()

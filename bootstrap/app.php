@@ -15,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Alias middleware untuk pembatasan akses per role
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'role'            => \App\Http\Middleware\RoleMiddleware::class,
+            'magang.diterima' => \App\Http\Middleware\MagangDiterima::class,
         ]);
 
         // Kalau user yang sudah login membuka /login atau /register,

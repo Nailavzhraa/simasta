@@ -59,4 +59,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(EmailOtp::class);
     }
+
+    // belum_diajukan | diproses | diverifikasi | diterima | ditolak
+    public function statusMagang(): string
+    {
+        // mode preview, hanya aktif di APP_ENV=local
+        if (app()->environment('local') && session()->has('preview_status')) {
+            return session('preview_status');
+        }
+
+        return $this->pengajuan->status ?? 'belum_diajukan';
+    }
+
+    // Halaman tujuan setelah login, sesuai role
+    public function dashboardUrl(): string
+    {
+        return match ($this->role) {
+            'admin'      => route('admin.dashboard'),
+            default      => route('mahasiswa.dashboard'),
+        };
+    }
 }

@@ -1,3 +1,4 @@
+{{-- resources/views/mahasiswa/bantuan.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Bantuan - SIMASTA')
@@ -36,7 +37,7 @@
 
     $faq = [
         ['Kenapa beberapa menu terkunci?',
-         'Surat Keterangan, Presensi, Posisi Magang, Logbook, dan Penilaian Perilaku Kerja hanya terbuka setelah kamu dinyatakan lolos magang di BPS Kota Batu.'],
+         'Presensi, Posisi Magang, Logbook, dan Penilaian & Sertifikat hanya terbuka setelah kamu dinyatakan lolos magang di BPS Kota Batu.'],
         ['Di mana saya melihat status pengajuan?',
          'Di halaman Beranda. Bagian Tahapan Pengajuan menunjukkan sampai tahap mana pengajuanmu berjalan.'],
         ['Siapa yang menentukan posisi magang dan pembimbing lapangan?',
@@ -44,7 +45,7 @@
         ['Bagaimana format dokumen yang harus diunggah?',
          'Semua dokumen berformat PDF dengan ukuran maksimal 5 MB per file.'],
         ['Bagaimana cara mendapatkan sertifikat magang?',
-         'Setelah penilaian dari admin dan pembimbing magang selesai, hasil nilai dan sertifikat tersedia di menu Penilaian Perilaku Kerja.'],
+         'Setelah penilaian dari admin dan pembimbing magang selesai, hasil nilai dan sertifikat tersedia di menu Penilaian & Sertifikat.'],
     ];
 
     $adaKontak = !empty($kontak['email']) || !empty($kontak['whatsapp']);

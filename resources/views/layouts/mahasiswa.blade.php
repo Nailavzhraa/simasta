@@ -1,27 +1,24 @@
+{{-- resources/views/layouts/mahasiswa.blade.php --}}
 @php
     // status: belum_diajukan | diproses | diverifikasi | diterima | ditolak
-    $statusMagang = optional(auth()->user()->pengajuan ?? null)->status ?? 'belum_diajukan';
+    $statusMagang = auth()->user()->statusMagang();
     $diterima     = $statusMagang === 'diterima';
 
-    // [label, path (null = halaman belum dibuat), icon, terkunci?]
+    // [label, path, icon, terkunci?]
     $menus = [
-        ['Beranda',                 'mahasiswa/dashboard',  'bi-house-door',           false],
-        ['Dokumen Magang',          'mahasiswa/dokumen',    'bi-file-earmark-text',    false],
-        ['Surat Keterangan',        'mahasiswa/surat',      'bi-file-earmark-check',   !$diterima],
-        ['Presensi',                'mahasiswa/presensi',   'bi-geo-alt',              !$diterima],
-        ['Posisi Magang',           'mahasiswa/penempatan', 'bi-people',               !$diterima],
-        ['Logbook',                 'mahasiswa/logbook',    'bi-journal-text',         !$diterima],
-        ['Penilaian & Sertifikat',  'mahasiswa/penilaian',  'bi-clipboard-check',      !$diterima],
-        ['Profil',                  'mahasiswa/profil',     'bi-person',               false],
-        ['Bantuan',                 'mahasiswa/bantuan',    'bi-question-circle',      false],
-        ['Pengumuman',              'mahasiswa/pengumuman', 'bi-megaphone',            false],
+        ['Beranda',                'mahasiswa/dashboard',  'bi-house-door',         false],
+        ['Dokumen Magang',         'mahasiswa/dokumen',    'bi-file-earmark-text',  false],
+        ['Surat Keterangan',       'mahasiswa/surat',      'bi-file-earmark-check', false],
+        ['Logbook',                'mahasiswa/logbook',    'bi-journal-text',       !$diterima],
+        ['Penilaian & Sertifikat', 'mahasiswa/penilaian',  'bi-award',              !$diterima],
+        ['Pengumuman',             'mahasiswa/pengumuman', 'bi-megaphone',          false],
+        ['Bantuan',                'mahasiswa/bantuan',    'bi-question-circle',    false],
     ];
 @endphp
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <style>
-/* lebar sidebar dipakai juga oleh konten (lihat langkah 2) */
 :root{ --sb-w:250px; }
 html.sb-collapsed{ --sb-w:78px; }
 
@@ -37,7 +34,7 @@ html.sb-collapsed{ --sb-w:78px; }
         linear-gradient(180deg,var(--blue) 0%,var(--blue-dark) 100%);
 }
 
-/* logo: tanpa latar putih */
+/* logo */
 .mhs-logo{display:flex; align-items:center; gap:12px; padding:18px;
     border-bottom:1px solid rgba(255,255,255,.15); flex-shrink:0; white-space:nowrap}
 .mhs-logo img{width:42px; height:42px; object-fit:contain; flex-shrink:0;
@@ -61,6 +58,9 @@ html.sb-collapsed{ --sb-w:78px; }
 }
 .mhs-menu i{font-size:17px; width:20px; text-align:center; flex-shrink:0}
 .mhs-menu a:hover, .mhs-toggle:hover{background:rgba(255,255,255,.14)}
+.mhs-menu a:focus-visible, .mhs-menu .locked:focus-visible, .mhs-toggle:focus-visible,
+.mhs-user-top:focus-visible, .mhs-quick a:focus-visible, .mhs-logout:focus-visible{
+    outline:2px solid #fff; outline-offset:2px}
 
 /* AKTIF = ORANYE */
 .mhs-menu a.active{
@@ -70,24 +70,39 @@ html.sb-collapsed{ --sb-w:78px; }
 }
 .mhs-menu a.active i{color:#fff}
 
-.mhs-menu .locked{opacity:.5; cursor:not-allowed}
+/* terkunci */
+.mhs-menu .locked{opacity:.5; cursor:not-allowed; position:relative}
+.mhs-menu .locked:hover{background:rgba(255,255,255,.07)}
 .mhs-menu .locked .lock{margin-left:auto; font-size:13px; width:auto}
 
 /* tombol tutup/buka menu */
 .mhs-toggle{margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,.12); border-radius:12px 12px 0 0; padding-bottom:12px}
 .mhs-toggle i{transition:transform .3s}
 
-/* kartu user + keluar */
-.mhs-user{margin:12px; padding:14px; border-radius:16px;
+/* ===== kartu user ===== */
+.mhs-user{margin:12px; padding:10px; border-radius:16px;
     background:rgba(255,255,255,.12); flex-shrink:0; overflow:hidden}
-.mhs-user-top{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+.mhs-user-top{
+    display:flex; align-items:center; gap:10px; padding:8px; margin-bottom:6px;
+    border-radius:12px; color:#fff; text-decoration:none; transition:.2s;
+}
+.mhs-user-top:hover{background:rgba(255,255,255,.1)}
+.mhs-user-top.active{
+    background:linear-gradient(120deg,var(--orange),var(--orange-dark));
+    box-shadow:0 6px 16px rgba(238,138,58,.35);
+}
+.mhs-user-top.active .mhs-badge{background:#fff; color:#b45309}
 .mhs-avatar{width:38px; height:38px; border-radius:50%; background:var(--green);
     display:grid; place-items:center; font-weight:700; flex-shrink:0}
-.mhs-user b{font-size:13px; display:block}
-.mhs-user small{font-size:11px; opacity:.85; word-break:break-all}
+.mhs-user-info{min-width:0; flex:1}
+.mhs-user b{font-size:13px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mhs-user small{font-size:11px; opacity:.85; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .mhs-badge{display:inline-block; margin-top:4px; padding:2px 8px; border-radius:20px;
     font-size:10px; font-weight:600; background:var(--orange); color:#5a3200}
 .mhs-badge.ok{background:var(--green); color:#fff}
+.mhs-chev{font-size:14px; opacity:.7; transition:.2s; flex-shrink:0}
+.mhs-user-top:hover .mhs-chev{transform:translateX(3px); opacity:1}
+
 .mhs-logout{
     width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
     padding:10px; border:0; border-radius:12px; background:rgba(255,255,255,.18);
@@ -95,12 +110,19 @@ html.sb-collapsed{ --sb-w:78px; }
 }
 .mhs-logout:hover{background:var(--orange); color:#5a3200}
 
+/* toast */
+.mhs-toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,16px); z-index:300;
+    background:#14213d; color:#fff; padding:11px 16px; border-radius:12px; font-size:13px;
+    max-width:90vw; opacity:0; pointer-events:none; transition:.25s}
+.mhs-toast.show{opacity:1; transform:translate(-50%,0)}
+
 /* ===== MODE TERTUTUP (hanya ikon) ===== */
 html.sb-collapsed .mhs-logo{justify-content:center; padding:18px 0}
 html.sb-collapsed .mhs-logo > div,
 html.sb-collapsed .mhs-menu span,
-html.sb-collapsed .mhs-menu .lock,
 html.sb-collapsed .mhs-user-info,
+html.sb-collapsed .mhs-chev,
+html.sb-collapsed .mhs-quick,
 html.sb-collapsed .mhs-logout span{display:none}
 
 html.sb-collapsed .mhs-menu{padding:12px 10px}
@@ -108,9 +130,10 @@ html.sb-collapsed .mhs-menu a,
 html.sb-collapsed .mhs-menu .locked,
 html.sb-collapsed .mhs-toggle{justify-content:center; padding:11px 0}
 html.sb-collapsed .mhs-toggle i{transform:rotate(180deg)}
+html.sb-collapsed .mhs-menu .locked .lock{position:absolute; top:5px; right:12px; font-size:9px; margin:0}
 
-html.sb-collapsed .mhs-user{margin:10px; padding:10px}
-html.sb-collapsed .mhs-user-top{justify-content:center; margin-bottom:10px}
+html.sb-collapsed .mhs-user{margin:10px; padding:6px}
+html.sb-collapsed .mhs-user-top{justify-content:center; padding:6px 0}
 </style>
 
 <aside class="mhs-side">
@@ -135,15 +158,15 @@ html.sb-collapsed .mhs-user-top{justify-content:center; margin-bottom:10px}
         @foreach($menus as [$label, $path, $icon, $locked])
             <li>
                 @if($locked)
-                    <div class="locked" title="{{ $label }} (terbuka setelah pengajuan diterima)">
+                    <button type="button" class="locked" data-locked="{{ $label }}"
+                            aria-disabled="true" title="{{ $label }} (terbuka setelah lolos magang)">
                         <i class="bi {{ $icon }}"></i>
                         <span>{{ $label }}</span>
                         <i class="bi bi-lock-fill lock"></i>
-                    </div>
+                    </button>
                 @else
-                    <a href="{{ $path ? '/'.$path : '#' }}"
-                       title="{{ $label }}"
-                       class="{{ $path && request()->is($path.'*') ? 'active' : '' }}">
+                    <a href="/{{ $path }}" title="{{ $label }}"
+                       class="{{ request()->is($path.'*') ? 'active' : '' }}">
                         <i class="bi {{ $icon }}"></i>
                         <span>{{ $label }}</span>
                     </a>
@@ -152,19 +175,21 @@ html.sb-collapsed .mhs-user-top{justify-content:center; margin-bottom:10px}
         @endforeach
     </ul>
 
+    {{-- KARTU USER: klik langsung ke Profil (sudah termasuk Posisi Magang) --}}
     <div class="mhs-user">
-        <div class="mhs-user-top">
-            <div class="mhs-avatar" title="{{ auth()->user()->name ?? 'Mahasiswa' }}">
-                {{ strtoupper(substr(auth()->user()->name ?? 'M', 0, 1)) }}
-            </div>
+
+        <a href="/mahasiswa/profil" title="Profil & Posisi Magang"
+           class="mhs-user-top {{ request()->is('mahasiswa/profil*') ? 'active' : '' }}">
+            <div class="mhs-avatar">{{ strtoupper(substr(auth()->user()->name ?? 'M', 0, 1)) }}</div>
             <div class="mhs-user-info">
                 <b>{{ auth()->user()->name ?? 'Mahasiswa' }}</b>
-                <small>{{ auth()->user()->email ?? '' }}</small><br>
+                <small>{{ auth()->user()->email ?? '' }}</small>
                 <span class="mhs-badge {{ $diterima ? 'ok' : '' }}">
                     {{ $diterima ? 'Peserta Magang' : 'Calon Peserta' }}
                 </span>
             </div>
-        </div>
+            <i class="bi bi-chevron-right mhs-chev"></i>
+        </a>
 
         <form method="POST" action="/logout">
             @csrf
@@ -176,17 +201,37 @@ html.sb-collapsed .mhs-user-top{justify-content:center; margin-bottom:10px}
 
 </aside>
 
+<div class="mhs-toast" id="mhsToast" role="status"></div>
+
 <script>
 (function () {
     var root = document.documentElement;
     var KEY  = 'simasta_sidebar_collapsed';
 
-    // pulihkan pilihan terakhir
     try { if (localStorage.getItem(KEY) === '1') root.classList.add('sb-collapsed'); } catch (e) {}
 
     document.getElementById('mhsToggle').addEventListener('click', function () {
         var closed = root.classList.toggle('sb-collapsed');
         try { localStorage.setItem(KEY, closed ? '1' : '0'); } catch (e) {}
     });
+
+    var toast = document.getElementById('mhsToast'), timer;
+    function show(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(timer);
+        timer = setTimeout(function () { toast.classList.remove('show'); }, 3000);
+    }
+
+    document.querySelectorAll('[data-locked]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            show('"' + btn.dataset.locked + '" terbuka setelah kamu dinyatakan lolos magang di BPS.');
+        });
+    });
+
+    // pesan dari middleware saat URL terkunci dibuka manual
+    @if(session('terkunci'))
+        show(@json(session('terkunci')));
+    @endif
 })();
 </script>

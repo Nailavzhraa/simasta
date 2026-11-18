@@ -17,7 +17,7 @@ class OtpService
 
         $user->otps()->create([
             'code_hash'  => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
+            'expires_at' => now()->addMinutes(5),
         ]);
 
         Mail::to($user->email)->send(new OtpMail($user->name, $code));

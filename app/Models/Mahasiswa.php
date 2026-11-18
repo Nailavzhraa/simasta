@@ -35,6 +35,9 @@ class Mahasiswa extends Model
         'kecamatan',
         'kelurahan',
         'alamat_kampus',
+
+         // Foto profil mahasiswa
+        'foto',
     ];
 
     public function user()

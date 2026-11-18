@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -27,43 +26,78 @@ class User extends Authenticatable
         ];
     }
 
-    public function isMahasiswa()
+    public function isMahasiswa(): bool
     {
         return $this->role === 'mahasiswa';
     }
 
-    public function isAdmin()
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
-    public function isPembimbing()
+    public function isPembimbing(): bool
     {
         return $this->role === 'pembimbing';
     }
 
-    // Relasi: 1 mahasiswa punya 1 pengajuan magang
     public function pengajuan(): HasOne
     {
         return $this->hasOne(Pengajuan::class);
     }
 
-    // Relasi: 1 akun punya 1 data mahasiswa (diisi saat daftar)
     public function mahasiswa(): HasOne
     {
         return $this->hasOne(Mahasiswa::class);
     }
 
-    // Relasi: 1 akun bisa punya OTP (dipakai verifikasi email)
     public function otps(): HasMany
     {
         return $this->hasMany(EmailOtp::class);
     }
 
-    // belum_diajukan | diproses | diverifikasi | diterima | ditolak
+    /**
+     * Daftar kolom wajib profil, disamakan dengan indikator
+     * kelengkapan pada mahasiswa/profil.blade.php.
+     */
+    public static function kolomProfilWajib(): array
+    {
+        return [
+            'jenis_kelamin',
+            'no_telepon',
+            'perguruan_tinggi',
+            'program_studi',
+            'alamat_kampus',
+            'nim',
+            'semester',
+            'dosen_pembimbing',
+            'foto',
+        ];
+    }
+
+    public function profilLengkap(): bool
+    {
+        if (!$this->isMahasiswa()) {
+            return true;
+        }
+
+        $mahasiswa = $this->mahasiswa;
+
+        if (!$mahasiswa) {
+            return false;
+        }
+
+        foreach (self::kolomProfilWajib() as $kolom) {
+            if (blank($mahasiswa->{$kolom})) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function statusMagang(): string
     {
-        // mode preview, hanya aktif di APP_ENV=local
         if (app()->environment('local') && session()->has('preview_status')) {
             return session('preview_status');
         }
@@ -71,12 +105,11 @@ class User extends Authenticatable
         return $this->pengajuan->status ?? 'belum_diajukan';
     }
 
-    // Halaman tujuan setelah login, sesuai role
     public function dashboardUrl(): string
     {
         return match ($this->role) {
-            'admin'      => route('admin.dashboard'),
-            default      => route('mahasiswa.dashboard'),
+            'admin' => route('admin.dashboard'),
+            default => route('mahasiswa.dashboard'),
         };
     }
 }

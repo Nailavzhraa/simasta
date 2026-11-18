@@ -90,7 +90,54 @@
     .empty-row i{font-size:32px; display:block; margin-bottom:8px}
 
     @media (max-width:640px){ .adm-welcome{padding:20px} }
+
+    /* Penyempurnaan ukuran saja — struktur dashboard lama tetap */
+    .adm-dashboard-compact {font-family: Arial, Helvetica, sans-serif; font-size:13px; line-height:1.5;}
+    .adm-dashboard-compact h1,.adm-dashboard-compact h2,.adm-dashboard-compact h3,
+    .adm-dashboard-compact p,.adm-dashboard-compact span,.adm-dashboard-compact a,
+    .adm-dashboard-compact th,.adm-dashboard-compact td {font-family:inherit;}
+    .adm-dashboard-compact .adm-welcome {padding:22px 24px; margin-bottom:16px; border-radius:14px;}
+    .adm-dashboard-compact .adm-welcome h1 {font-size:23px; margin-bottom:5px;}
+    .adm-dashboard-compact .adm-welcome p {font-size:12px;}
+    .adm-dashboard-compact .adm-label {font-size:10px; padding:5px 10px; margin-bottom:9px;}
+    .adm-dashboard-compact .section-gap {margin-bottom:14px;}
+    .adm-dashboard-compact .card {padding:17px 18px; border-radius:12px;}
+    .adm-dashboard-compact .card h2 {font-size:15px; line-height:1.4; margin-bottom:6px;}
+    .adm-dashboard-compact .stat-card {min-height:unset;}
+    .adm-dashboard-compact .stat-card h3 {font-size:12px; margin-bottom:6px;}
+    .adm-dashboard-compact .stat-card .number {font-size:25px; line-height:1.2; margin-bottom:4px;}
+    .adm-dashboard-compact .stat-card p {font-size:11px; margin:0;}
+    .adm-dashboard-compact .stat-ico {width:38px; height:38px; border-radius:10px; font-size:17px; box-shadow:none;}
+    .adm-dashboard-compact .desc {font-size:12px; margin-bottom:12px;}
+    .adm-dashboard-compact .link-all {font-size:12px;}
+    .adm-dashboard-compact .sum-row {padding:8px 0;}
+    .adm-dashboard-compact .sum-row span,.adm-dashboard-compact .sum-row b {font-size:12px;}
+    .adm-dashboard-compact .sum-dot {width:9px; height:9px;}
+    .adm-dashboard-compact .trend-chart {height:155px;}
+    .adm-dashboard-compact .table-container {width:100%; overflow-x:auto;}
+    .adm-dashboard-compact .table-container table {width:100%; min-width:610px; border-collapse:collapse; table-layout:auto;}
+    .adm-dashboard-compact .table-container th,
+    .adm-dashboard-compact .table-container td {padding:9px 11px; font-size:12px; line-height:1.4; vertical-align:middle;}
+    .adm-dashboard-compact .table-container th {font-size:11px; font-weight:700; white-space:nowrap;}
+    .adm-dashboard-compact .table-container th:first-child,
+    .adm-dashboard-compact .table-container td:first-child {width:42px; text-align:center;}
+    .adm-dashboard-compact .table-container th:nth-child(4),
+    .adm-dashboard-compact .table-container td:nth-child(4) {white-space:nowrap; width:110px;}
+    .adm-dashboard-compact .table-container th:last-child,
+    .adm-dashboard-compact .table-container td:last-child {width:80px; text-align:center;}
+    .adm-dashboard-compact .btn-detail {padding:6px 10px; font-size:11px; border-radius:7px;}
+    .adm-dashboard-compact .badge {font-size:10px; padding:4px 8px;}
+    .adm-dashboard-compact .empty-row {padding:20px 8px; font-size:12px;}
+    .adm-dashboard-compact .info-item {padding-top:9px; padding-bottom:9px; font-size:12px;}
+    @media(max-width:640px) {
+        .adm-dashboard-compact .adm-welcome {padding:18px;}
+        .adm-dashboard-compact .adm-welcome h1 {font-size:20px;}
+        .adm-dashboard-compact .card {padding:14px;}
+        .adm-dashboard-compact .head-row {gap:8px;}
+    }
 </style>
+
+<div class="adm-dashboard-compact">
 
 {{-- SAPAAN --}}
 <section class="adm-welcome">
@@ -260,6 +307,8 @@
             <span class="badge badge-success">Aktif</span>
         </div>
     </div>
+
+</div>
 
 </div>
 

@@ -99,6 +99,9 @@ button{font-family:inherit;border:0;outline-offset:2px;cursor:pointer;-webkit-ap
 input{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#f8fafc;font-family:inherit;transition:.2s}
 input::placeholder{color:#9ca3af}
 input:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+.forgot-password{display:flex;justify-content:flex-end;margin:-6px 0 16px;font-size:12.5px}
+.forgot-password a{color:var(--blue-dark);font-weight:700;text-decoration:none;transition:color .2s}
+.forgot-password a:hover{color:var(--orange-dark);text-decoration:underline}
 .has-toggle input{padding-right:44px}
 .eye{display:flex;align-items:center;justify-content:center;position:absolute;right:4px;top:50%;transform:translateY(-50%);
   width:38px;height:38px;padding:0;background:none;color:var(--muted);border-radius:8px}
@@ -196,12 +199,16 @@ input:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0
                 </div>
               </div>
 
-              <button type="submit" class="btn-submit stagger" style="--i:4">Masuk</button>
+              <div class="forgot-password stagger" style="--i:4">
+                <a href="{{ route('password.request') }}">Lupa kata sandi?</a>
+              </div>
+
+              <button type="submit" class="btn-submit stagger" style="--i:5">Masuk</button>
             </form>
 
-            <div class="divider stagger" style="--i:5">Atau</div>
+            <div class="divider stagger" style="--i:6">Atau</div>
 
-            <a href="/auth/google/redirect" class="btn-google stagger" style="--i:6">{!! $googleIcon !!} Masuk dengan Google</a>
+            <a href="/auth/google/redirect" class="btn-google stagger" style="--i:7">{!! $googleIcon !!} Masuk dengan Google</a>
 
             <p class="switch">Belum punya akun? <button type="button" data-target="daftar">Daftar sekarang</button></p>
           </section>

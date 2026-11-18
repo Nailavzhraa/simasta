@@ -531,6 +531,30 @@
             .topbar { padding: 0 20px; }
         }
 
+
+        /* Submenu Data Pembimbing: mengikuti desain sidebar lama */
+        .sidebar-menu .sb-submenu-toggle {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            padding: 10px 14px; border: 0; border-radius: 12px;
+            background: transparent; color: #fff; font: 500 14px Arial, sans-serif;
+            cursor: pointer; text-align: left; white-space: nowrap;
+        }
+        .sidebar-menu .sb-submenu-toggle:hover { background: rgba(255,255,255,.14); }
+        .sidebar-menu .sb-submenu-toggle.active {
+            background: linear-gradient(120deg, var(--sb-orange), var(--sb-orange-dark));
+            box-shadow: 0 6px 16px rgba(238,138,58,.4); font-weight: 600;
+        }
+        .sb-submenu-chevron { margin-left: auto; font-size: 12px !important; }
+        .sb-submenu[hidden] { display: none !important; }
+        .sidebar-menu .sb-submenu { padding: 4px 0 4px 18px; list-style: none; }
+        .sidebar-menu .sb-submenu a { font-size: 12.5px; padding: 9px 10px; }
+        .sidebar-menu .sb-submenu a i { font-size: 15px; }
+        html.sb-collapsed .sidebar-menu .sb-submenu-toggle {
+            justify-content: center; padding: 11px 0;
+        }
+        html.sb-collapsed .sb-submenu-chevron,
+        html.sb-collapsed .sb-submenu { display: none !important; }
+
     </style>
 
     {{-- pulihkan pilihan menu tertutup/terbuka sebelum halaman tampil (tanpa kedip) --}}
@@ -547,17 +571,23 @@
 <body>
 
 @php
-    // [label, path, icon]
+    // Urutan menu utama; pertahankan URL modul lama.
     $adminMenus = [
-        ['Dashboard',          'admin/dashboard',  'bi-grid-1x2'],
-        ['Data Mahasiswa',     'admin/mahasiswa',  'bi-people'],
-        ['Pengajuan Magang',   'admin/pengajuan',  'bi-inbox'],
-        ['Data Pembimbing',    'admin/pembimbing', 'bi-person-badge'],
-        ['Penempatan',         'admin/penempatan', 'bi-geo-alt'],
-        ['Monitoring Logbook', 'admin/logbook',    'bi-journal-text'],
-        ['Penilaian',          'admin/penilaian',  'bi-award'],
-        ['Laporan',            'admin/laporan',    'bi-file-earmark-bar-graph'],
+        ['Dashboard', 'admin/dashboard', 'bi-grid-1x2'],
+        ['Verifikasi Magang', 'admin/pengajuan', 'bi-inbox'],
+        ['Data Mahasiswa', 'admin/mahasiswa', 'bi-people'],
+        ['Monitoring Logbook', 'admin/logbook', 'bi-journal-text'],
+        ['Penilaian', 'admin/penilaian', 'bi-award'],
     ];
+
+    $pembimbingMenus = [
+        ['Kelola Tim Kerja', 'admin/divisi', 'bi-diagram-3'],
+        ['Kelola Data Pembimbing', 'admin/pembimbing', 'bi-person-badge'],
+        ['Penempatan Magang', 'admin/penempatan', 'bi-geo-alt'],
+    ];
+    $pembimbingAktif = request()->is('admin/divisi*')
+        || request()->is('admin/pembimbing*')
+        || request()->is('admin/penempatan*');
 @endphp
 
 <!-- SIDEBAR -->
@@ -573,18 +603,15 @@
     </div>
 
     <ul class="sidebar-menu">
-
         <li>
-            <button type="button" class="sb-toggle" id="sbToggle" title="Tutup / buka menu">
+            <button type="button" class="sb-toggle" id="sbToggle" title="Tutup / buka menu" aria-label="Tutup atau buka sidebar">
                 <i class="bi bi-chevron-double-left"></i>
-                <span>Tutup Menu</span>
             </button>
         </li>
 
-        @foreach($adminMenus as [$label, $path, $icon])
+        @foreach(array_slice($adminMenus, 0, 3) as [$label, $path, $icon])
             <li>
-                <a href="/{{ $path }}"
-                   title="{{ $label }}"
+                <a href="/{{ $path }}" title="{{ $label }}"
                    class="{{ request()->is($path.'*') ? 'active' : '' }}">
                     <i class="bi {{ $icon }}"></i>
                     <span>{{ $label }}</span>
@@ -592,6 +619,36 @@
             </li>
         @endforeach
 
+        <li>
+            <button type="button" class="sb-submenu-toggle {{ $pembimbingAktif ? 'active' : '' }}"
+                    id="pembimbingToggle" aria-expanded="true"
+                    aria-controls="pembimbingSubmenu" title="Manajemen Magang">
+                <i class="bi bi-briefcase"></i>
+                <span>Manajemen Magang</span>
+                <i class="bi bi-chevron-down sb-submenu-chevron" aria-hidden="true"></i>
+            </button>
+            <ul id="pembimbingSubmenu" class="sb-submenu">
+                @foreach($pembimbingMenus as [$label, $path, $icon])
+                    <li>
+                        <a href="/{{ $path }}" title="{{ $label }}"
+                           class="{{ request()->is($path.'*') ? 'active' : '' }}">
+                            <i class="bi {{ $icon }}"></i>
+                            <span>{{ $label }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </li>
+
+        @foreach(array_slice($adminMenus, 3) as [$label, $path, $icon])
+            <li>
+                <a href="/{{ $path }}" title="{{ $label }}"
+                   class="{{ request()->is($path.'*') ? 'active' : '' }}">
+                    <i class="bi {{ $icon }}"></i>
+                    <span>{{ $label }}</span>
+                </a>
+            </li>
+        @endforeach
     </ul>
 
     <div class="sb-user">
@@ -656,6 +713,19 @@
     document.getElementById('sbToggle').addEventListener('click', function () {
         var closed = document.documentElement.classList.toggle('sb-collapsed');
         try { localStorage.setItem('simasta_sidebar_collapsed', closed ? '1' : '0'); } catch (e) {}
+    });
+
+    const pembimbingToggle = document.getElementById('pembimbingToggle');
+    const pembimbingSubmenu = document.getElementById('pembimbingSubmenu');
+    pembimbingToggle.addEventListener('click', function () {
+        // Saat sidebar ikon-only, perluas terlebih dahulu agar submenu terlihat.
+        if (document.documentElement.classList.contains('sb-collapsed')) {
+            document.documentElement.classList.remove('sb-collapsed');
+            try { localStorage.setItem('simasta_sidebar_collapsed', '0'); } catch (e) {}
+        }
+        const membuka = pembimbingSubmenu.hidden;
+        pembimbingSubmenu.hidden = !membuka;
+        pembimbingToggle.setAttribute('aria-expanded', String(membuka));
     });
 </script>
 

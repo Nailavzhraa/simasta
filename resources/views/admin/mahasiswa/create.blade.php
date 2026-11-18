@@ -220,28 +220,6 @@
             </div>
         </div>
 
-        {{-- ALAMAT --}}
-        <div class="em-section">
-            <h3 class="em-section-title">Alamat</h3>
-            <p class="em-section-desc">Tempat tinggal mahasiswa saat ini.</p>
-
-            <div class="em-grid">
-                <div class="em-field em-full @error('alamat') has-error @enderror">
-                    <label for="alamat">Alamat</label>
-                    <textarea id="alamat" name="alamat" rows="4"
-                        placeholder="Masukkan alamat mahasiswa">{{ old('alamat') }}</textarea>
-                    @error('alamat') <div class="em-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="em-field @error('kota') has-error @enderror">
-                    <label for="kota">Kota</label>
-                    <input type="text" id="kota" name="kota"
-                        value="{{ old('kota') }}"
-                        placeholder="Contoh: Malang">
-                    @error('kota') <div class="em-error">{{ $message }}</div> @enderror
-                </div>
-            </div>
-        </div>
 
         {{-- TOMBOL --}}
         <div class="em-actions">

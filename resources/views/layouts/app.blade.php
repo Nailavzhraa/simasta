@@ -1444,8 +1444,11 @@ table tbody tr:hover {
 
             </div>
 
-
             <div class="user-info">
+
+                @if(auth()->check() && auth()->user()->role === 'mahasiswa')
+                    @include('layouts.partials.lonceng')
+                @endif
 
                 <div>
 
@@ -1454,7 +1457,6 @@ table tbody tr:hover {
                     </strong>
 
                 </div>
-
 
                 <div class="avatar">
 

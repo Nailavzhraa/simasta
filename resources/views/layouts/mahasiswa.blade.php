@@ -1,18 +1,25 @@
 {{-- resources/views/layouts/mahasiswa.blade.php --}}
 @php
-    // status: belum_diajukan | diproses | diverifikasi | diterima | ditolak
-    $statusMagang = auth()->user()->statusMagang();
-    $diterima     = $statusMagang === 'diterima';
+    // Selalu gunakan pengajuan terbaru milik akun yang sedang login.
+    // Draft autosave tidak dianggap sebagai pengajuan resmi.
+    $pengajuanSidebar = \App\Models\Pengajuan::query()
+        ->where('user_id', auth()->id())
+        ->latest('id')
+        ->first();
+
+    $statusMagang = $pengajuanSidebar?->status ?? 'belum_diajukan';
+    $diterima = $statusMagang === 'diterima';
 
     // [label, path, icon, terkunci?]
+    // Akses Logbook/Penilaian tetap mengikuti middleware magang.diterima.
+    // Ketersediaan fitur di halaman tujuan dapat diatur sesuai fase pelaksanaan.
     $menus = [
-        ['Beranda',                'mahasiswa/dashboard',  'bi-house-door',         false],
-        ['Dokumen Magang',         'mahasiswa/dokumen',    'bi-file-earmark-text',  false],
-        ['Surat Keterangan',       'mahasiswa/surat',      'bi-file-earmark-check', false],
-        ['Logbook',                'mahasiswa/logbook',    'bi-journal-text',       !$diterima],
-        ['Penilaian & Sertifikat', 'mahasiswa/penilaian',  'bi-award',              !$diterima],
-        ['Pengumuman',             'mahasiswa/pengumuman', 'bi-megaphone',          false],
-        ['Bantuan',                'mahasiswa/bantuan',    'bi-question-circle',    false],
+        ['Beranda',                 'mahasiswa/dashboard', 'bi-house-door',         false],
+        ['Pengajuan Magang',        'mahasiswa/dokumen',   'bi-file-earmark-text',  false],
+        ['Surat Keterangan',        'mahasiswa/surat',     'bi-file-earmark-check', !$diterima],
+        ['Logbook Magang',          'mahasiswa/logbook',   'bi-journal-text',       !$diterima],
+        ['Penilaian & Sertifikat',  'mahasiswa/penilaian', 'bi-award',              !$diterima],
+        ['Bantuan',                 'mahasiswa/bantuan',   'bi-question-circle',    false],
     ];
 @endphp
 
@@ -151,7 +158,6 @@ html.sb-collapsed .mhs-user-top{justify-content:center; padding:6px 0}
         <li>
             <button type="button" class="mhs-toggle" id="mhsToggle" title="Tutup / buka menu">
                 <i class="bi bi-chevron-double-left"></i>
-                <span>Tutup Menu</span>
             </button>
         </li>
 
@@ -159,7 +165,7 @@ html.sb-collapsed .mhs-user-top{justify-content:center; padding:6px 0}
             <li>
                 @if($locked)
                     <button type="button" class="locked" data-locked="{{ $label }}"
-                            aria-disabled="true" title="{{ $label }} (terbuka setelah lolos magang)">
+                            aria-disabled="true" title="{{ $label }} (tersedia setelah pengajuan diterima)">
                         <i class="bi {{ $icon }}"></i>
                         <span>{{ $label }}</span>
                         <i class="bi bi-lock-fill lock"></i>
@@ -210,13 +216,15 @@ html.sb-collapsed .mhs-user-top{justify-content:center; padding:6px 0}
 
     try { if (localStorage.getItem(KEY) === '1') root.classList.add('sb-collapsed'); } catch (e) {}
 
-    document.getElementById('mhsToggle').addEventListener('click', function () {
+    var toggle = document.getElementById('mhsToggle');
+    if (toggle) toggle.addEventListener('click', function () {
         var closed = root.classList.toggle('sb-collapsed');
         try { localStorage.setItem(KEY, closed ? '1' : '0'); } catch (e) {}
     });
 
     var toast = document.getElementById('mhsToast'), timer;
     function show(msg) {
+        if (!toast) return;
         toast.textContent = msg;
         toast.classList.add('show');
         clearTimeout(timer);
@@ -225,7 +233,7 @@ html.sb-collapsed .mhs-user-top{justify-content:center; padding:6px 0}
 
     document.querySelectorAll('[data-locked]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            show('"' + btn.dataset.locked + '" terbuka setelah kamu dinyatakan lolos magang di BPS.');
+            show('"' + btn.dataset.locked + '" tersedia setelah pengajuan magangmu diterima oleh BPS Kota Batu.');
         });
     });
 

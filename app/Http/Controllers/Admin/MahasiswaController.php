@@ -11,12 +11,25 @@ class MahasiswaController extends Controller
     /**
      * Menampilkan semua data mahasiswa
      */
-    public function index()
-    {
-        $mahasiswa = Mahasiswa::latest()->get();
 
-        return view('admin.mahasiswa.index', compact('mahasiswa'));
-    }
+public function index()
+{
+    $mahasiswa = Mahasiswa::latest()->get();
+
+    $totalMahasiswa = $mahasiswa->count();
+
+    $bulanIni = $mahasiswa->filter(function ($item) {
+        return $item->created_at &&
+            $item->created_at->isCurrentMonth();
+    })->count();
+
+    return view('admin.mahasiswa.index', compact(
+        'mahasiswa',
+        'totalMahasiswa',
+        'bulanIni'
+    ));
+}
+
 
     /**
      * Menampilkan form tambah mahasiswa

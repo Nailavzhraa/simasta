@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role'            => \App\Http\Middleware\RoleMiddleware::class,
             'magang.diterima' => \App\Http\Middleware\MagangDiterima::class,
+            'profil.lengkap' => \App\Http\Middleware\EnsureProfileComplete::class,
         ]);
 
         // Kalau user yang sudah login membuka /login atau /register,

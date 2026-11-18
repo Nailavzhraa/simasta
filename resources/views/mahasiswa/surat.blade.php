@@ -23,7 +23,6 @@
 @php
     // Jenis surat yang bisa diajukan. Ubah sesuai surat yang benar-benar diterbitkan BPS Kota Batu.
     $jenisSurat = [
-        'Surat Keterangan Magang',
         'Surat Balasan Permohonan Magang',
         'Surat Keterangan Selesai Magang',
     ];
@@ -37,7 +36,6 @@
      * CONTOH di bawah hanya tampil saat APP_DEBUG=true, jadi tidak terlihat di server produksi.
      */
     $contoh = [
-        ['jenis' => 'Contoh: Surat Keterangan Magang', 'keperluan' => 'Contoh keperluan', 'status' => 'terbit',   'file' => 'contoh.pdf', 'created_at' => now()->subDays(9)],
         ['jenis' => 'Contoh: Surat Balasan Permohonan Magang', 'keperluan' => 'Contoh keperluan', 'status' => 'diproses', 'file' => null, 'created_at' => now()->subDays(3)],
         ['jenis' => 'Contoh: Surat Keterangan Selesai Magang', 'keperluan' => 'Contoh keperluan', 'status' => 'diajukan', 'file' => null, 'created_at' => now()->subDay()],
     ];
@@ -130,7 +128,7 @@
 
             <div class="sk-field">
                 <label for="keperluanSurat">Keperluan</label>
-                <textarea id="keperluanSurat" rows="4" placeholder="Contoh: untuk persyaratan administrasi di kampus"></textarea>
+                <textarea id="keperluanSurat" rows="4" placeholder=></textarea>
             </div>
 
             <button type="button" class="sk-btn">Ajukan Surat</button>

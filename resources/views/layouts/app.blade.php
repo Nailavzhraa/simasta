@@ -1419,6 +1419,33 @@ table tbody tr:hover {
 
 }
 
+
+        /* SIMASTA — shared header improvements (non-destructive) */
+        :root { --sim-blue:#1c5b9e; --sim-navy:#173f70; --sim-border:#e2eaf2; --sim-text:#253b56; }
+        .topbar { min-height:76px; height:auto; gap:18px; position:relative; z-index:35; }
+        .topbar-title { color:#162f4e; font-size:20px; letter-spacing:-.35px; }
+        .topbar-actions { display:flex; align-items:center; gap:13px; margin-left:auto; }
+        .sim-account { position:relative; }
+        .sim-account-toggle { display:flex;align-items:center;gap:11px;padding:6px 9px;border:1px solid transparent;background:transparent;border-radius:12px;cursor:pointer;color:var(--sim-text);font:inherit; }
+        .sim-account-toggle:hover,.sim-account-toggle[aria-expanded="true"] {background:#f3f7fc;border-color:#e3edf7;}
+        .sim-account-name {text-align:left;display:block;max-width:180px;min-width:0;}
+        .sim-account-name strong {font-size:13px;font-weight:750;color:#1b3555;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .sim-account-name small {display:block;color:#73879e;font-size:11px;margin-top:3px;}
+        .sim-avatar {width:42px;height:42px;border-radius:50%;flex:0 0 42px;background:#dbeafe;color:#1d5fa8;display:grid;place-items:center;font-weight:800;font-size:15px;overflow:hidden;border:2px solid #e9f2ff;}
+        .sim-avatar img {width:100%;height:100%;object-fit:cover;display:block;}
+        .sim-chevron {color:#8394a8;font-size:13px;}
+        .sim-profile-menu {display:none;position:absolute;right:0;top:calc(100% + 10px);width:min(320px,calc(100vw - 28px));background:#fff;border:1px solid #e1eaf4;border-radius:15px;box-shadow:0 18px 44px rgba(24,52,90,.16);padding:8px;z-index:1000;}
+        .sim-profile-menu.is-open {display:block;}
+        .sim-profile-summary {padding:12px 12px 13px;border-bottom:1px solid #eaf0f6;margin-bottom:5px;}
+        .sim-profile-summary strong {display:block;font-size:13px;color:#1d385b;overflow-wrap:anywhere;}
+        .sim-profile-summary span {display:block;font-size:11px;color:#7d8fa3;margin-top:5px;overflow-wrap:anywhere;}
+        .sim-profile-link {width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;color:#425d77;text-align:left;text-decoration:none;font-size:12px;font-weight:650;padding:11px 12px;border-radius:9px;font-family:inherit;cursor:pointer;}
+        .sim-profile-link:hover {background:#eef5ff;color:#1b5a9c;text-decoration:none;}
+        .sim-profile-link.danger {color:#b94a53;}
+        .sim-profile-link.danger:hover {background:#fff2f3;}
+        .sim-profile-link i {width:17px;text-align:center;font-size:16px;}
+        @media(max-width:650px) { .topbar{padding:12px 16px;min-height:67px;} .topbar-title{font-size:16px;} .topbar-actions{gap:5px;} .sim-account-toggle{gap:5px;padding:3px;} .sim-account-name,.sim-chevron{display:none;} .sim-avatar{width:37px;height:37px;flex-basis:37px;} .content{padding:18px 14px;} }
+
 </style>
 
 </head>
@@ -1434,40 +1461,71 @@ table tbody tr:hover {
     <main class="main">
 
 
-        <!-- TOPBAR -->
-
+        <!-- TOPBAR: profil konsisten untuk akun Admin dan Mahasiswa -->
+        @php
+            $simUser = auth()->user();
+            $simIsStudent = $simUser && $simUser->role === 'mahasiswa';
+            $simDisplayName = $simUser?->name ?: 'Pengguna SIMASTA';
+            $simInitial = mb_strtoupper(mb_substr($simDisplayName, 0, 1));
+            $simMahasiswa = $simIsStudent ? $simUser->mahasiswa : null;
+            // Kolom foto telah diperkenalkan pada profil mahasiswa; hanya dipakai jika filenya tersedia.
+            $simPhotoPath = $simIsStudent ? data_get($simMahasiswa, 'foto') : null;
+            $simPhotoPath = is_string($simPhotoPath) ? ltrim($simPhotoPath, '/') : null;
+            $simPhotoUrl = null;
+            if ($simPhotoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($simPhotoPath)) {
+                $simPhotoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($simPhotoPath);
+            }
+        @endphp
         <header class="topbar">
-
-            <div class="topbar-title">
-
-                @yield('page-title', 'Dashboard')
-
-            </div>
-
-            <div class="user-info">
-
-                @if(auth()->check() && auth()->user()->role === 'mahasiswa')
+            <div class="topbar-title">@yield('page-title', 'Dashboard')</div>
+            <div class="topbar-actions">
+                {{-- Lonceng mahasiswa: gunakan partial yang sudah ada, jangan gandakan data notifikasi. --}}
+                @if($simIsStudent && view()->exists('layouts.partials.lonceng'))
                     @include('layouts.partials.lonceng')
                 @endif
-
-                <div>
-
-                    <strong>
-                        @yield('user-role', 'SIMASTA')
-                    </strong>
-
-                </div>
-
-                <div class="avatar">
-
-                    @yield('user-avatar', 'S')
-
-                </div>
-
+                {{-- Lonceng Admin akan diaktifkan setelah rute dan sumber notifikasi Admin diaudit. --}}
+                @auth
+                    <div class="sim-account" id="simAccount">
+                        <button type="button" class="sim-account-toggle" id="simAccountToggle"
+                                aria-expanded="false" aria-controls="simProfileMenu"
+                                aria-label="Buka menu profil pengguna">
+                            <span class="sim-account-name">
+                                <strong>{{ $simDisplayName }}</strong>
+                                <small>@yield('user-role', 'SIMASTA')</small>
+                            </span>
+                            <span class="sim-avatar" aria-hidden="true">
+                                @if($simPhotoUrl)
+                                    <img src="{{ $simPhotoUrl }}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+                                    <span style="display:none">{{ $simInitial }}</span>
+                                @else
+                                    {{ $simInitial }}
+                                @endif
+                            </span>
+                            <i class="bi bi-chevron-down sim-chevron" aria-hidden="true"></i>
+                        </button>
+                        <div class="sim-profile-menu" id="simProfileMenu" role="menu">
+                            <div class="sim-profile-summary">
+                                <strong>{{ $simDisplayName }}</strong>
+                                <span>{{ $simUser->email }}</span>
+                            </div>
+                            @if(\Illuminate\Support\Facades\Route::has('mahasiswa.profil') && $simIsStudent)
+                                <a class="sim-profile-link" href="{{ route('mahasiswa.profil') }}" role="menuitem"><i class="bi bi-person-circle"></i> Profil saya</a>
+                            @elseif(\Illuminate\Support\Facades\Route::has('profile.edit'))
+                                <a class="sim-profile-link" href="{{ route('profile.edit') }}" role="menuitem"><i class="bi bi-person-circle"></i> Profil saya</a>
+                            @endif
+                            @if(\Illuminate\Support\Facades\Route::has('logout'))
+                                <form method="POST" action="{{ route('logout') }}" style="margin:0">
+                                    @csrf
+                                    <button type="submit" class="sim-profile-link danger" role="menuitem"><i class="bi bi-box-arrow-right"></i> Keluar</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <span class="avatar">@yield('user-avatar', 'S')</span>
+                @endauth
             </div>
-
         </header>
-
 
         <!-- CONTENT -->
 
@@ -1479,8 +1537,28 @@ table tbody tr:hover {
 
 
     </main>
-
-
+    <script>
+    (function () {
+        const root = document.getElementById('simAccount');
+        const toggle = document.getElementById('simAccountToggle');
+        const menu = document.getElementById('simProfileMenu');
+        if (!root || !toggle || !menu) return;
+        function setOpen(open) {
+            menu.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        toggle.addEventListener('click', () => setOpen(!menu.classList.contains('is-open')));
+        document.addEventListener('click', (event) => {
+            if (!root.contains(event.target)) setOpen(false);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && menu.classList.contains('is-open')) {
+                setOpen(false);
+                toggle.focus();
+            }
+        });
+    })();
+    </script>
 </body>
 
 </html>

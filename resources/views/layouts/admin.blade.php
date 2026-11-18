@@ -555,6 +555,51 @@
         html.sb-collapsed .sb-submenu-chevron,
         html.sb-collapsed .sb-submenu { display: none !important; }
 
+
+        /* PENYEMPURNAAN HEADER, FOTO, NOTIFIKASI DAN MOBILE */
+        .sb-avatar,.avatar{overflow:hidden}
+        .sb-avatar img,.admin-top-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+        .sb-avatar span[hidden],.admin-top-avatar span[hidden]{display:none}
+        .admin-top-controls{gap:14px}
+        .admin-dropdown-container{position:relative}
+        .admin-icon-btn{width:43px;height:43px;border:1px solid #e2e8f0;border-radius:50%;background:#f8fafc;color:#1d5fa8;display:grid;place-items:center;cursor:pointer;position:relative;font-size:19px}
+        .admin-icon-btn:hover,.admin-profile-button:hover{background:#eff6ff}
+        .admin-notif-count{position:absolute;right:-5px;top:-5px;min-width:19px;height:19px;border-radius:12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+        .admin-profile-button{display:flex;align-items:center;gap:11px;border:0;border-radius:12px;padding:5px 7px;background:transparent;cursor:pointer;color:#193c63;font-family:inherit}
+        .admin-profile-name{font-weight:750;font-size:13px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+        .admin-profile-name small{display:block;font-size:10px;color:#8494a6;font-weight:500;margin-top:3px}
+        .admin-top-avatar{flex-shrink:0;width:42px;height:42px;background:#dbeafe;color:#1e5fa8}
+        .admin-chevron{font-size:12px;color:#71839b}
+        .admin-dropdown[hidden]{display:none!important}
+        .admin-dropdown{position:absolute;right:0;top:calc(100% + 13px);width:min(355px,calc(100vw - 30px));background:white;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 17px 50px rgba(26,52,84,.16);z-index:1200;overflow:hidden}
+        .admin-dropdown-title{padding:16px;border-bottom:1px solid #edf2f6;display:flex;flex-direction:column;gap:5px}
+        .admin-dropdown-title strong{font-size:13px;color:#193c63}.admin-dropdown-title small{font-size:11px;color:#71839b;overflow-wrap:anywhere}
+        .admin-notif-list{max-height:310px;overflow:auto}
+        .admin-notif-item{display:flex;align-items:flex-start;gap:11px;padding:12px 15px;border-bottom:1px solid #f1f5f9;text-decoration:none;color:#334155}
+        .admin-notif-item:hover{background:#f4f9ff}
+        .admin-notif-mark{width:32px;height:32px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;background:#eff6ff;color:#245fa6}
+        .admin-notif-detail{display:flex;flex-direction:column;gap:4px;min-width:0}.admin-notif-detail strong{font-size:12px;color:#193c63}.admin-notif-detail small{font-size:11px;color:#8193a5}
+        .admin-notif-empty{padding:22px 15px;text-align:center;font-size:12px;color:#71839b}
+        .admin-dropdown-footer{display:flex;justify-content:center;align-items:center;gap:8px;padding:13px;font-size:12px;font-weight:750;color:#245fa6;text-decoration:none;background:#f8fbff}
+        .admin-profile-link{display:flex;align-items:center;gap:10px;padding:13px 16px;width:100%;border:0;background:white;text-align:left;color:#334155;text-decoration:none;cursor:pointer;font:600 12px Arial,sans-serif}
+        .admin-profile-link:hover{background:#f1f7ff}.admin-profile-logout{color:#b91c1c}
+        .admin-mobile-trigger{display:none;width:41px;height:41px;border:1px solid #dbe5ef;border-radius:11px;background:#fff;color:#245fa6;place-items:center;font-size:21px;cursor:pointer}
+        .admin-mobile-scrim{display:none}
+        .admin-dropdown-container button:focus-visible,.admin-mobile-trigger:focus-visible{outline:2px solid #245fa6;outline-offset:2px}
+        @media(max-width:600px){
+            .sidebar{display:flex!important;width:260px!important;transform:translateX(-100%);transition:transform .25s ease;z-index:1300}
+            .sidebar.admin-mobile-visible{transform:translateX(0)}
+            html.sb-collapsed .sidebar-logo .sidebar-logo-text,html.sb-collapsed .sidebar-menu span,html.sb-collapsed .sb-user-info,html.sb-collapsed .logout-btn span{display:initial}
+            html.sb-collapsed .sidebar-menu a,html.sb-collapsed .sb-toggle{justify-content:flex-start;padding:10px 14px}
+            html.sb-collapsed .sb-submenu{display:block!important}
+            .admin-mobile-trigger{display:grid}
+            .admin-mobile-scrim:not([hidden]){display:block;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:1250}
+            .topbar{gap:12px;padding:0 14px}.topbar-title{font-size:16px;flex:1}
+            .admin-profile-name,.admin-chevron{display:none}
+            .content{padding:15px}
+            html.sb-collapsed .sb-submenu-chevron{display:inline!important}
+        }
+
     </style>
 
     {{-- pulihkan pilihan menu tertutup/terbuka sebelum halaman tampil (tanpa kedip) --}}
@@ -569,6 +614,30 @@
 
 
 <body>
+@php
+    $adminAccount = auth()->user();
+    $adminName = $adminAccount?->name ?? 'Administrator';
+    $adminEmail = $adminAccount?->email ?? '';
+    $adminInitial = mb_strtoupper(mb_substr($adminName, 0, 1));
+
+    // Foto admin menggunakan kolom akun yang sudah tersedia (jika ada).
+    $adminPhotoPath = data_get($adminAccount, 'foto') ?: data_get($adminAccount, 'foto_profil');
+    $adminPhotoUrl = null;
+    if (filled($adminPhotoPath)) {
+        $path = ltrim(str_replace('\\', '/', (string) $adminPhotoPath), '/');
+        if (str_starts_with($path, 'storage/')) $path = substr($path, 8);
+        if (!str_contains($path, '..') && \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            $adminPhotoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        }
+    }
+
+    // Indikator ini adalah jumlah pengajuan BELUM DIPROSES,
+    // bukan jumlah notifikasi yang belum dibaca.
+    $pendingPengajuanCount = \App\Models\Pengajuan::query()->where('status', 'diproses')->count();
+    $pendingPengajuanList = \App\Models\Pengajuan::query()
+        ->with('user.mahasiswa')->where('status', 'diproses')
+        ->latest('created_at')->limit(5)->get();
+@endphp
 
 @php
     // Urutan menu utama; pertahankan URL modul lama.
@@ -592,7 +661,8 @@
 
 <!-- SIDEBAR -->
 
-<aside class="sidebar">
+<div class="admin-mobile-scrim" id="adminMobileScrim" hidden></div>
+<aside class="sidebar" id="adminSidebar">
 
     <div class="sidebar-logo">
         <img src="{{ asset('images/logo-bps.png') }}" alt="Logo BPS">
@@ -653,12 +723,17 @@
 
     <div class="sb-user">
         <div class="sb-user-top">
-            <div class="sb-avatar" title="{{ auth()->user()->name ?? 'Admin' }}">
-                {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+            <div class="sb-avatar" title="{{ $adminName }}">
+                @if($adminPhotoUrl)
+                    <img src="{{ $adminPhotoUrl }}" alt="Foto profil Admin" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+                    <span hidden>{{ $adminInitial }}</span>
+                @else
+                    <span>{{ $adminInitial }}</span>
+                @endif
             </div>
             <div class="sb-user-info">
-                <b>{{ auth()->user()->name ?? 'Admin' }}</b>
-                <small>{{ auth()->user()->email ?? '' }}</small><br>
+                <b>{{ $adminName }}</b>
+                <small>{{ $adminEmail }}</small><br>
                 <span class="sb-badge">Administrator</span>
             </div>
         </div>
@@ -681,21 +756,75 @@
     <!-- TOPBAR -->
 
     <header class="topbar">
-
+        <button type="button" id="adminMobileOpen" class="admin-mobile-trigger" aria-label="Buka menu Admin" aria-expanded="false" aria-controls="adminSidebar"><i class="bi bi-list"></i></button>
         <div class="topbar-title">
             @yield('page-title', 'Dashboard Admin')
         </div>
 
-        <div class="user-info">
-
-            <div class="user-role">
-                <strong>@yield('user-role', 'Admin')</strong>
+        <div class="user-info admin-top-controls">
+            <div class="admin-dropdown-container" id="adminNotifRoot">
+                <button type="button" class="admin-icon-btn" id="adminNotifButton"
+                    aria-label="Pengajuan menunggu pemeriksaan: {{ $pendingPengajuanCount }}"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="adminNotifMenu">
+                    <i class="bi bi-bell"></i>
+                    @if($pendingPengajuanCount > 0)
+                        <span class="admin-notif-count">{{ $pendingPengajuanCount > 99 ? '99+' : $pendingPengajuanCount }}</span>
+                    @endif
+                </button>
+                <div class="admin-dropdown admin-notif-menu" id="adminNotifMenu" hidden>
+                    <div class="admin-dropdown-title">
+                        <strong>Pengajuan menunggu pemeriksaan</strong>
+                        <small>{{ $pendingPengajuanCount }} pengajuan diproses</small>
+                    </div>
+                    <div class="admin-notif-list">
+                        @forelse($pendingPengajuanList as $pending)
+                            <a href="{{ route('admin.pengajuan.show', $pending) }}" class="admin-notif-item">
+                                <span class="admin-notif-mark"><i class="bi bi-file-earmark-text"></i></span>
+                                <span class="admin-notif-detail">
+                                    <strong>{{ $pending->user?->mahasiswa?->nama ?: ($pending->user?->name ?? 'Mahasiswa') }}</strong>
+                                    <small>Pengajuan magang perlu diperiksa</small>
+                                    <small>{{ $pending->created_at?->diffForHumans() }}</small>
+                                </span>
+                            </a>
+                        @empty
+                            <div class="admin-notif-empty">Belum ada pengajuan yang menunggu pemeriksaan.</div>
+                        @endforelse
+                    </div>
+                    <a class="admin-dropdown-footer" href="{{ route('admin.pengajuan.index') }}">Lihat semua pengajuan <i class="bi bi-arrow-right"></i></a>
+                </div>
             </div>
 
-            <div class="avatar">
-                @yield('user-avatar', 'A')
+            <div class="admin-dropdown-container" id="adminProfileRoot">
+                <button type="button" class="admin-profile-button" id="adminProfileButton"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="adminProfileMenu">
+                    <span class="admin-profile-name">{{ $adminName }}<small>Administrator</small></span>
+                    <span class="avatar admin-top-avatar">
+                        @if($adminPhotoUrl)
+                            <img src="{{ $adminPhotoUrl }}" alt="Foto profil Admin" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+                            <span hidden>{{ $adminInitial }}</span>
+                        @else
+                            <span>{{ $adminInitial }}</span>
+                        @endif
+                    </span>
+                    <i class="bi bi-chevron-down admin-chevron"></i>
+                </button>
+                <div class="admin-dropdown admin-profile-menu" id="adminProfileMenu" hidden>
+                    <div class="admin-dropdown-title admin-profile-heading">
+                        <strong>{{ $adminName }}</strong>
+                        <small>{{ $adminEmail }}</small>
+                        <small>Administrator · SIMASTA</small>
+                    </div>
+                    @if(\Illuminate\Support\Facades\Route::has('admin.profil'))
+                        <a href="{{ route('admin.profil') }}" class="admin-profile-link"><i class="bi bi-person"></i> Profil Saya</a>
+                    @elseif(\Illuminate\Support\Facades\Route::has('profile.edit'))
+                        <a href="{{ route('profile.edit') }}" class="admin-profile-link"><i class="bi bi-person"></i> Profil Saya</a>
+                    @endif
+                    <form method="POST" action="{{ url('logout') }}">
+                        @csrf
+                        <button type="submit" class="admin-profile-link admin-profile-logout"><i class="bi bi-box-arrow-right"></i> Keluar</button>
+                    </form>
+                </div>
             </div>
-
         </div>
 
     </header>
@@ -727,6 +856,44 @@
         pembimbingSubmenu.hidden = !membuka;
         pembimbingToggle.setAttribute('aria-expanded', String(membuka));
     });
+
+    // Dropdown notifikasi dan profil.
+    (function () {
+        const pairs = [
+            [document.getElementById('adminNotifButton'), document.getElementById('adminNotifMenu')],
+            [document.getElementById('adminProfileButton'), document.getElementById('adminProfileMenu')]
+        ];
+        function closeMenus() {
+            pairs.forEach(([b,m]) => { if (m) m.hidden = true; if (b) b.setAttribute('aria-expanded','false'); });
+        }
+        pairs.forEach(([button,menu]) => {
+            if (!button || !menu) return;
+            button.addEventListener('click', e => {
+                e.stopPropagation();
+                const opening = menu.hidden;
+                closeMenus();
+                menu.hidden = !opening;
+                button.setAttribute('aria-expanded', String(opening));
+            });
+            menu.addEventListener('click', e => e.stopPropagation());
+        });
+        document.addEventListener('click', closeMenus);
+        const sidebar = document.getElementById('adminSidebar');
+        const trigger = document.getElementById('adminMobileOpen');
+        const scrim = document.getElementById('adminMobileScrim');
+        function mobile(open) {
+            sidebar?.classList.toggle('admin-mobile-visible',open);
+            if (scrim) scrim.hidden = !open;
+            trigger?.setAttribute('aria-expanded', String(open));
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+        trigger?.addEventListener('click', () => mobile(!sidebar?.classList.contains('admin-mobile-visible')));
+        scrim?.addEventListener('click', () => mobile(false));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeMenus(); mobile(false); }
+        });
+        window.addEventListener('resize', () => { if (window.innerWidth > 600) mobile(false); });
+    })();
 </script>
 
 </body>

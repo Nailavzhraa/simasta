@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Mahasiswa;
 use App\Models\Pengajuan;
 use App\Models\PengajuanDraft;
+use App\Models\User;
+use App\Notifications\PengajuanBaruNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,26 +18,24 @@ class DokumenController extends Controller
 {
     /**
      * Menampilkan formulir pengajuan magang
-     * serta draft milik mahasiswa yang login.
+     * beserta draft milik mahasiswa.
      */
     public function index(Request $request)
     {
         $user = $request->user();
 
-        $mahasiswa = Mahasiswa::where(
-            'user_id',
-            $user->id
-        )->first();
+        $mahasiswa = Mahasiswa::query()
+            ->where('user_id', $user->id)
+            ->first();
 
-        $pengajuan = Pengajuan::where(
-            'user_id',
-            $user->id
-        )->latest('id')->first();
+        $pengajuan = Pengajuan::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
 
-        $draft = PengajuanDraft::where(
-            'user_id',
-            $user->id
-        )->first();
+        $draft = PengajuanDraft::query()
+            ->where('user_id', $user->id)
+            ->first();
 
         return view('mahasiswa.dokumen', compact(
             'mahasiswa',
@@ -45,26 +45,27 @@ class DokumenController extends Controller
     }
 
     /**
-     * Mengirim pengajuan magang final.
+     * Mengirim pengajuan magang resmi.
      *
-     * Formulir baru menggunakan link Google Drive,
-     * bukan upload PDF ke server.
+     * Dokumen menggunakan link Google Drive.
+     * Notifikasi database dikirim kepada Admin
+     * setelah pengajuan berhasil dibuat.
      */
     public function store(Request $request)
     {
         $user = $request->user();
 
-        $mahasiswa = Mahasiswa::where(
-            'user_id',
-            $user->id
-        )->first();
+        $mahasiswa = Mahasiswa::query()
+            ->where('user_id', $user->id)
+            ->first();
 
-        // ==========================================
-        // VALIDASI DATA MAHASISWA DAN AKADEMIK
-        // ==========================================
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDASI FORMULIR
+        |--------------------------------------------------------------------------
+        */
 
         $validated = $request->validate([
-
             'nama' => [
                 'required',
                 'string',
@@ -114,10 +115,6 @@ class DokumenController extends Controller
                 'between:1,14',
             ],
 
-            // ======================================
-            // PERIODE MAGANG
-            // ======================================
-
             'tanggal_mulai' => [
                 'required',
                 'date_format:Y-m-d',
@@ -137,10 +134,6 @@ class DokumenController extends Controller
                 ]),
             ],
 
-            // ======================================
-            // DOKUMEN GOOGLE DRIVE
-            // ======================================
-
             'link_cv' => [
                 'required',
                 'url',
@@ -159,10 +152,6 @@ class DokumenController extends Controller
                 'max:2048',
             ],
 
-            // ======================================
-            // TUJUAN DAN KETERANGAN
-            // ======================================
-
             'tujuan_magang' => [
                 'required',
                 'string',
@@ -175,7 +164,6 @@ class DokumenController extends Controller
                 'string',
                 'max:3000',
             ],
-
         ], [
             'nim.unique' =>
                 'NIM sudah digunakan oleh mahasiswa lain.',
@@ -190,29 +178,36 @@ class DokumenController extends Controller
                 'Durasi magang harus antara 1 sampai 12 bulan.',
         ]);
 
-        // ==========================================
-        // VALIDASI DOMAIN GOOGLE DRIVE
-        // ==========================================
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDASI LINK GOOGLE DRIVE
+        |--------------------------------------------------------------------------
+        */
 
         foreach ([
             'link_cv',
             'link_surat',
             'link_proposal',
         ] as $field) {
-
             $url = $validated[$field];
 
             $scheme = strtolower(
-                (string) parse_url($url, PHP_URL_SCHEME)
+                (string) parse_url(
+                    $url,
+                    PHP_URL_SCHEME
+                )
             );
 
             $host = strtolower(
-                (string) parse_url($url, PHP_URL_HOST)
+                (string) parse_url(
+                    $url,
+                    PHP_URL_HOST
+                )
             );
 
             if (
-                $scheme !== 'https' ||
-                !in_array($host, [
+                $scheme !== 'https'
+                || !in_array($host, [
                     'drive.google.com',
                     'docs.google.com',
                 ], true)
@@ -226,9 +221,11 @@ class DokumenController extends Controller
             }
         }
 
-        // ==========================================
-        // HITUNG TANGGAL SELESAI OTOMATIS
-        // ==========================================
+        /*
+        |--------------------------------------------------------------------------
+        | HITUNG PERIODE MAGANG
+        |--------------------------------------------------------------------------
+        */
 
         $tanggalMulai = Carbon::createFromFormat(
             '!Y-m-d',
@@ -237,8 +234,6 @@ class DokumenController extends Controller
 
         $durasiBulan = (int) $validated['durasi_bulan'];
 
-        // Aturan: durasi bulan kalender,
-        // tanggal akhir inklusif.
         $tanggalSelesai = $tanggalMulai
             ->copy()
             ->addMonthsNoOverflow($durasiBulan)
@@ -247,9 +242,15 @@ class DokumenController extends Controller
         $mulai = $tanggalMulai->toDateString();
         $selesai = $tanggalSelesai->toDateString();
 
-        // ==========================================
-        // SIMPAN DATA DALAM TRANSAKSI DATABASE
-        // ==========================================
+        /*
+        |--------------------------------------------------------------------------
+        | SIMPAN PENGAJUAN DAN NOTIFIKASI
+        |--------------------------------------------------------------------------
+        |
+        | Semua operasi database dilakukan dalam
+        | satu transaksi agar data konsisten.
+        |
+        */
 
         DB::transaction(function () use (
             $user,
@@ -258,19 +259,20 @@ class DokumenController extends Controller
             $selesai,
             $durasiBulan
         ) {
-
-            // Mengunci user agar dua proses submit
-            // tidak berjalan bersamaan.
+            /*
+             * Kunci baris user untuk mencegah
+             * dua pengajuan bersamaan.
+             */
             DB::table('users')
                 ->where('id', $user->id)
                 ->lockForUpdate()
                 ->first();
 
-            // Cegah pengajuan aktif yang ganda.
-            $pengajuanAktif = Pengajuan::where(
-                'user_id',
-                $user->id
-            )
+            /*
+             * Cegah pengajuan aktif ganda.
+             */
+            $pengajuanAktif = Pengajuan::query()
+                ->where('user_id', $user->id)
                 ->whereIn('status', [
                     'diproses',
                     'diverifikasi',
@@ -287,10 +289,9 @@ class DokumenController extends Controller
                 ]);
             }
 
-            // ======================================
-            // SIMPAN DATA PROFIL MAHASISWA
-            // ======================================
-
+            /*
+             * Simpan atau perbarui profil mahasiswa.
+             */
             Mahasiswa::updateOrCreate(
                 [
                     'user_id' => $user->id,
@@ -320,18 +321,17 @@ class DokumenController extends Controller
                 ]
             );
 
-            // Sinkronkan nama akun agar tampilan
-            // Dashboard konsisten dengan profil.
+            /*
+             * Sinkronkan nama akun.
+             */
             $user->forceFill([
                 'name' => $validated['nama'],
             ])->save();
 
-            // ======================================
-            // BUAT PENGAJUAN RESMI
-            // ======================================
-
-            Pengajuan::create([
-
+            /*
+             * Buat pengajuan resmi.
+             */
+            $pengajuan = Pengajuan::create([
                 'user_id' => $user->id,
 
                 'instansi' => 'BPS Kota Batu',
@@ -345,7 +345,6 @@ class DokumenController extends Controller
                 'jenis_pendaftaran' =>
                     $validated['jenis_pendaftaran'],
 
-                // Link Google Drive
                 'link_cv' =>
                     $validated['link_cv'],
 
@@ -355,7 +354,6 @@ class DokumenController extends Controller
                 'link_proposal' =>
                     $validated['link_proposal'],
 
-                // Informasi pengajuan
                 'tujuan_magang' =>
                     $validated['tujuan_magang'],
 
@@ -365,26 +363,46 @@ class DokumenController extends Controller
                 'keterangan_tambahan' =>
                     $validated['keterangan_tambahan'] ?? null,
 
-                // Status awal
                 'status' => 'diproses',
 
                 'status_pelaksanaan' => 'belum_mulai',
             ]);
 
-            // ======================================
-            // HAPUS DRAFT SETELAH BERHASIL SUBMIT
-            // ======================================
+            /*
+             * Hapus draft setelah pengajuan
+             * resmi berhasil dibuat.
+             */
+            PengajuanDraft::query()
+                ->where('user_id', $user->id)
+                ->delete();
 
-            PengajuanDraft::where(
-                'user_id',
-                $user->id
-            )->delete();
+            /*
+             * Kirim notifikasi database ke seluruh
+             * akun dengan role admin.
+             *
+             * Tidak membuat notifikasi ganda pada
+             * pengajuan aktif yang sama karena
+             * pengecekan dilakukan sebelumnya.
+             */
+            $adminUsers = User::query()
+                ->where('role', 'admin')
+                ->get();
 
+            foreach ($adminUsers as $admin) {
+                $admin->notify(
+                    new PengajuanBaruNotification(
+                        $pengajuan,
+                        $validated['nama']
+                    )
+                );
+            }
         }, 3);
 
-        // ==========================================
-        // KEMBALI KE HALAMAN PENGAJUAN
-        // ==========================================
+        /*
+        |--------------------------------------------------------------------------
+        | KEMBALI KE HALAMAN PENGAJUAN
+        |--------------------------------------------------------------------------
+        */
 
         return redirect()
             ->route('mahasiswa.dokumen')

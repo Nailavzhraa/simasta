@@ -8,7 +8,7 @@
          'isi'   => 'Ini hanya contoh tampilan. Isi pengumuman asli dibuat admin.'],
         ['id' => 2, 'kategori' => 'Umum',     'penting' => false, 'tanggal' => '24 Okt 2026',
          'judul' => 'Pengumuman umum',
-         'isi'   => 'Contoh teks pengumuman umum untuk seluruh peserta dan calon peserta magang.'],
+         'isi'   => 'Contohteks pengumuman umum untuk seluruh peserta dan calon peserta magang.'],
         ['id' => 1, 'kategori' => 'Kegiatan', 'penting' => false, 'tanggal' => '18 Okt 2026',
          'judul' => 'Informasi kegiatan',
          'isi'   => 'Contoh informasi kegiatan magang yang diumumkan oleh admin.'],

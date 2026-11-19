@@ -6,18 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Divisi;
 use App\Models\Pembimbing;
 use App\Models\Pengajuan;
+use App\Notifications\StatusPengajuanNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class PengajuanController extends Controller
 {
     /**
-     * Daftar pengajuan magang.
+     * Menampilkan daftar pengajuan magang.
      */
     public function index(Request $request)
     {
-        $query = Pengajuan::with('user.mahasiswa')
+        $query = Pengajuan::query()
+            ->with('user.mahasiswa')
             ->latest();
 
         if ($request->filled('status')) {
@@ -28,20 +30,35 @@ class PengajuanController extends Controller
         }
 
         if ($request->filled('q')) {
-            $q = trim($request->input('q'));
+            $q = trim((string) $request->input('q'));
 
             $query->where(function ($builder) use ($q) {
                 $builder->whereHas('user', function ($user) use ($q) {
-                    $user->where('name', 'like', "%{$q}%")
-                        ->orWhere('email', 'like', "%{$q}%")
-                        ->orWhereHas('mahasiswa', function ($mhs) use ($q) {
-                            $mhs->where('nim', 'like', "%{$q}%")
-                                ->orWhere(
-                                    'perguruan_tinggi',
-                                    'like',
-                                    "%{$q}%"
-                                );
-                        });
+                    $user->where(
+                        'name',
+                        'like',
+                        "%{$q}%"
+                    )
+                    ->orWhere(
+                        'email',
+                        'like',
+                        "%{$q}%"
+                    )
+                    ->orWhereHas(
+                        'mahasiswa',
+                        function ($mhs) use ($q) {
+                            $mhs->where(
+                                'nim',
+                                'like',
+                                "%{$q}%"
+                            )
+                            ->orWhere(
+                                'perguruan_tinggi',
+                                'like',
+                                "%{$q}%"
+                            );
+                        }
+                    );
                 });
             });
         }
@@ -64,8 +81,6 @@ class PengajuanController extends Controller
                     'diverifikasi'
                 )->count(),
 
-                // Dipertahankan untuk kompatibilitas
-                // tampilan Admin yang lama.
                 'perlu_revisi' => Pengajuan::where(
                     'status',
                     'perlu_revisi'
@@ -89,10 +104,7 @@ class PengajuanController extends Controller
     }
 
     /**
-     * Detail pengajuan.
-     *
-     * Informasi periode, durasi, dan link Google Drive
-     * sudah tersedia melalui objek $pengajuan.
+     * Menampilkan detail pengajuan.
      */
     public function show(Pengajuan $pengajuan)
     {
@@ -115,13 +127,8 @@ class PengajuanController extends Controller
     /**
      * Membuka dokumen pengajuan.
      *
-     * Pengajuan baru:
-     *   Mengarah ke tautan Google Drive/Docs.
-     *
-     * Pengajuan lama:
-     *   Membuka PDF privat di penyimpanan lokal.
-     *
-     * Route ini wajib dilindungi middleware Admin.
+     * Dokumen baru menggunakan Google Drive.
+     * Dokumen lama tetap menggunakan PDF lokal.
      */
     public function dokumen(
         Request $request,
@@ -145,10 +152,9 @@ class PengajuanController extends Controller
 
         abort_unless($kolom !== null, 404);
 
-        // ======================================
-        // 1. PRIORITAS DOKUMEN GOOGLE DRIVE
-        // ======================================
-
+        /*
+         * Prioritas: link Google Drive.
+         */
         $link = trim(
             (string) ($pengajuan->{$kolom['link']} ?? '')
         );
@@ -160,16 +166,12 @@ class PengajuanController extends Controller
                 'Tautan Google Drive tidak valid.'
             );
 
-            // Buka tautan asli Google Drive.
-            // Izin akses dokumen tetap diatur
-            // oleh pemilik file di Google Drive.
             return redirect()->away($link);
         }
 
-        // ======================================
-        // 2. FALLBACK DOKUMEN PDF LAMA
-        // ======================================
-
+        /*
+         * Fallback: dokumen PDF lama.
+         */
         $path = $pengajuan->{$kolom['file']};
 
         abort_unless(
@@ -178,8 +180,6 @@ class PengajuanController extends Controller
             'Dokumen belum tersedia.'
         );
 
-        // Validasi lokasi dokumen sebelum
-        // memeriksa atau membaca file.
         $prefix = 'dokumen-magang/'
             . $pengajuan->user_id
             . '/';
@@ -196,10 +196,14 @@ class PengajuanController extends Controller
         );
 
         abort_unless(
-            $relativePath !== '' &&
-            !str_contains($relativePath, '\\') &&
-            !in_array('..', explode('/', $relativePath), true) &&
-            !str_contains($relativePath, "\0"),
+            $relativePath !== ''
+            && !str_contains($relativePath, '\\')
+            && !in_array(
+                '..',
+                explode('/', $relativePath),
+                true
+            )
+            && !str_contains($relativePath, "\0"),
             403,
             'Path dokumen tidak valid.'
         );
@@ -217,7 +221,6 @@ class PengajuanController extends Controller
             . $pengajuan->id
             . '.pdf';
 
-        // Download PDF lokal jika diminta.
         if ($request->boolean('download')) {
             return $disk->download(
                 $path,
@@ -228,13 +231,15 @@ class PengajuanController extends Controller
             );
         }
 
-        // Preview PDF di browser Admin.
         return response()->file(
             $disk->path($path),
             [
                 'Content-Type' => 'application/pdf',
+
                 'Content-Disposition' =>
-                    'inline; filename="' . $filename . '"',
+                    'inline; filename="'
+                    . $filename
+                    . '"',
 
                 'X-Content-Type-Options' => 'nosniff',
 
@@ -244,15 +249,17 @@ class PengajuanController extends Controller
     }
 
     /**
-     * Memastikan URL mengarah ke domain
-     * Google Drive atau Google Docs.
+     * Memeriksa keamanan URL Google Drive.
      */
     private function isValidGoogleDocumentUrl(
         string $url
     ): bool {
         if (
-            strlen($url) > 2048 ||
-            !filter_var($url, FILTER_VALIDATE_URL)
+            strlen($url) > 2048
+            || !filter_var(
+                $url,
+                FILTER_VALIDATE_URL
+            )
         ) {
             return false;
         }
@@ -272,58 +279,92 @@ class PengajuanController extends Controller
         );
 
         return $scheme === 'https'
-            && in_array($host, [
-                'drive.google.com',
-                'docs.google.com',
-            ], true)
+            && in_array(
+                $host,
+                [
+                    'drive.google.com',
+                    'docs.google.com',
+                ],
+                true
+            )
             && !isset($parts['user'])
             && !isset($parts['pass'])
             && !isset($parts['port']);
     }
 
     /**
-     * Verifikasi berkas mahasiswa.
+     * Verifikasi dokumen mahasiswa.
+     *
+     * Status berubah:
+     * diproses -> diverifikasi.
      */
     public function verifikasi(Pengajuan $pengajuan)
     {
-        if ($pengajuan->status !== 'diproses') {
+        $berhasil = DB::transaction(
+            function () use ($pengajuan) {
+                $data = Pengajuan::query()
+                    ->whereKey($pengajuan->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($data->status !== 'diproses') {
+                    return false;
+                }
+
+                $data->update([
+                    'status' => 'diverifikasi',
+                ]);
+
+                $data->loadMissing([
+                    'divisi',
+                    'pembimbingRef',
+                ]);
+
+                /*
+                 * Kirim satu notifikasi ke
+                 * mahasiswa pemilik pengajuan.
+                 */
+                $mahasiswa = $data->user;
+
+                if ($mahasiswa) {
+                    $mahasiswa->notify(
+                        new StatusPengajuanNotification(
+                            $data,
+                            'diverifikasi'
+                        )
+                    );
+                }
+
+                return true;
+            },
+            3
+        );
+
+        if (!$berhasil) {
             return back()->with(
                 'error',
-                'Pengajuan ini tidak dapat diverifikasi.'
+                'Pengajuan ini tidak dapat diverifikasi '
+                . 'karena statusnya sudah berubah.'
             );
         }
 
-        $pengajuan->update([
-            'status' => 'diverifikasi',
-        ]);
-
         return back()->with(
             'success',
-            'Berkas mahasiswa berhasil diverifikasi.'
+            'Berkas mahasiswa berhasil diverifikasi. '
+            . 'Notifikasi telah disimpan untuk mahasiswa.'
         );
     }
 
     /**
-     * Menerima pengajuan dan menentukan
-     * penempatan mahasiswa.
+     * Menerima pengajuan dan menentukan penempatan.
+     *
+     * Status berubah:
+     * diproses/diverifikasi -> diterima.
      */
     public function terima(
         Request $request,
         Pengajuan $pengajuan
     ) {
-        if (
-            !in_array(
-                $pengajuan->status,
-                ['diproses', 'diverifikasi'],
-                true
-            )
-        ) {
-            return back()->with(
-                'error',
-                'Pengajuan ini tidak bisa diterima.'
-            );
-        }
-
         $data = $request->validate([
             'divisi_id' => [
                 'required',
@@ -359,62 +400,124 @@ class PengajuanController extends Controller
             $data['pembimbing_id']
         );
 
-        // Pembimbing harus sesuai divisi.
+        /*
+         * Pembimbing harus sesuai divisi.
+         */
         if (
-            $pembimbing->divisi_id &&
-            (int) $pembimbing->divisi_id !==
-            (int) $divisi->id
+            $pembimbing->divisi_id
+            && (int) $pembimbing->divisi_id
+                !== (int) $divisi->id
         ) {
             return back()->with(
                 'error',
-                'Pembimbing tidak berada di divisi yang dipilih.'
+                'Pembimbing tidak berada di divisi '
+                . 'yang dipilih.'
             );
         }
 
-        $pengajuan->update([
-            'divisi_id' => $divisi->id,
+        $berhasil = DB::transaction(
+            function () use (
+                $pengajuan,
+                $data,
+                $divisi,
+                $pembimbing
+            ) {
+                /*
+                 * Kunci pengajuan untuk mencegah
+                 * persetujuan ganda.
+                 */
+                $pengajuanTerkunci = Pengajuan::query()
+                    ->whereKey($pengajuan->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            'pembimbing_id' => $pembimbing->id,
+                if (
+                    !in_array(
+                        $pengajuanTerkunci->status,
+                        [
+                            'diproses',
+                            'diverifikasi',
+                        ],
+                        true
+                    )
+                ) {
+                    return false;
+                }
 
-            'jobdesk' => $data['jobdesk'],
+                /*
+                 * Simpan hasil approval Admin.
+                 */
+                $pengajuanTerkunci->update([
+                    'divisi_id' => $divisi->id,
 
-            'bidang' => $divisi->nama,
+                    'pembimbing_id' => $pembimbing->id,
 
-            'pembimbing' => $pembimbing->nama,
+                    'jobdesk' => $data['jobdesk'],
 
-            'status' => 'diterima',
+                    'bidang' => $divisi->nama,
 
-            'catatan_admin' => null,
-        ]);
+                    'pembimbing' => $pembimbing->nama,
+
+                    'status' => 'diterima',
+
+                    'catatan_admin' => null,
+                ]);
+
+                $pengajuanTerkunci->load([
+                    'divisi',
+                    'pembimbingRef',
+                ]);
+
+                /*
+                 * Kirim notifikasi penerimaan.
+                 */
+                $mahasiswa = $pengajuanTerkunci->user;
+
+                if ($mahasiswa) {
+                    $mahasiswa->notify(
+                        new StatusPengajuanNotification(
+                            $pengajuanTerkunci,
+                            'diterima'
+                        )
+                    );
+                }
+
+                return true;
+            },
+            3
+        );
+
+        if (!$berhasil) {
+            return back()->with(
+                'error',
+                'Pengajuan ini tidak bisa diterima '
+                . 'karena sudah diputuskan atau '
+                . 'statusnya telah berubah.'
+            );
+        }
+
+        $nama = $pengajuan->user?->name
+            ?? 'Mahasiswa';
 
         return redirect()
             ->route('admin.pengajuan.index')
             ->with(
                 'success',
-                "Pengajuan {$pengajuan->user->name} berhasil diterima."
+                "Pengajuan {$nama} berhasil diterima. "
+                . 'Notifikasi telah disimpan untuk mahasiswa.'
             );
     }
 
     /**
-     * Menolak pengajuan dengan catatan Admin.
+     * Menolak pengajuan disertai alasan.
+     *
+     * Status berubah:
+     * diproses/diverifikasi -> ditolak.
      */
     public function tolak(
         Request $request,
         Pengajuan $pengajuan
     ) {
-        if (
-            !in_array(
-                $pengajuan->status,
-                ['diproses', 'diverifikasi'],
-                true
-            )
-        ) {
-            return back()->with(
-                'error',
-                'Pengajuan ini tidak bisa ditolak.'
-            );
-        }
-
         $data = $request->validate([
             'catatan_admin' => [
                 'required',
@@ -430,18 +533,80 @@ class PengajuanController extends Controller
                 'Alasan penolakan minimal 5 karakter.',
         ]);
 
-        $pengajuan->update([
-            'status' => 'ditolak',
+        $berhasil = DB::transaction(
+            function () use (
+                $pengajuan,
+                $data
+            ) {
+                /*
+                 * Kunci baris pengajuan agar
+                 * keputusan tidak diproses ganda.
+                 */
+                $pengajuanTerkunci = Pengajuan::query()
+                    ->whereKey($pengajuan->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            'catatan_admin' =>
-                $data['catatan_admin'],
-        ]);
+                if (
+                    !in_array(
+                        $pengajuanTerkunci->status,
+                        [
+                            'diproses',
+                            'diverifikasi',
+                        ],
+                        true
+                    )
+                ) {
+                    return false;
+                }
+
+                /*
+                 * Simpan keputusan dan alasan.
+                 */
+                $pengajuanTerkunci->update([
+                    'status' => 'ditolak',
+
+                    'catatan_admin' =>
+                        $data['catatan_admin'],
+                ]);
+
+                /*
+                 * Kirim notifikasi penolakan.
+                 */
+                $mahasiswa = $pengajuanTerkunci->user;
+
+                if ($mahasiswa) {
+                    $mahasiswa->notify(
+                        new StatusPengajuanNotification(
+                            $pengajuanTerkunci,
+                            'ditolak'
+                        )
+                    );
+                }
+
+                return true;
+            },
+            3
+        );
+
+        if (!$berhasil) {
+            return back()->with(
+                'error',
+                'Pengajuan ini tidak bisa ditolak '
+                . 'karena sudah diputuskan atau '
+                . 'statusnya telah berubah.'
+            );
+        }
+
+        $nama = $pengajuan->user?->name
+            ?? 'Mahasiswa';
 
         return redirect()
             ->route('admin.pengajuan.index')
             ->with(
                 'success',
-                "Pengajuan {$pengajuan->user->name} berhasil ditolak."
+                "Pengajuan {$nama} berhasil ditolak. "
+                . 'Notifikasi telah disimpan untuk mahasiswa.'
             );
     }
 }

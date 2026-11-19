@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\PembimbingController;
 use App\Http\Controllers\Admin\PenempatanController;
 use App\Http\Controllers\Admin\LogbookController as AdminLogbookController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\NotifikasiController as AdminNotifikasiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -119,6 +120,9 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
+
+        Route::post('/notifikasi/{notificationId}/buka', [AdminNotifikasiController::class, 'buka'])->name('notifikasi.buka');
+        Route::post('/notifikasi/baca-semua', [AdminNotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
 
         // nama route jadi admin.mahasiswa.index, admin.mahasiswa.create, dst.
         Route::resource('mahasiswa', MahasiswaController::class);

@@ -580,6 +580,17 @@
         .admin-notif-mark{width:32px;height:32px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;background:#eff6ff;color:#245fa6}
         .admin-notif-detail{display:flex;flex-direction:column;gap:4px;min-width:0}.admin-notif-detail strong{font-size:12px;color:#193c63}.admin-notif-detail small{font-size:11px;color:#8193a5}
         .admin-notif-empty{padding:22px 15px;text-align:center;font-size:12px;color:#71839b}
+        .admin-notif-form{margin:0}
+        .admin-notif-action{width:100%;border:0;background:#fff;text-align:left;font-family:inherit;cursor:pointer}
+        .admin-notif-action.is-unread{background:#eff6ff}
+        .admin-notif-action:focus-visible{outline:2px solid #245fa6;outline-offset:-2px}
+        .admin-notif-detail small{line-height:1.5;overflow-wrap:anywhere}
+        .admin-notif-unread-dot{background:#2563eb;width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+        .admin-notif-bottom{display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:6px;border-top:1px solid #edf2f6;padding:6px}
+        .admin-notif-bottom form{margin:0}
+        .admin-notif-all{border:0;background:transparent;color:#245fa6;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;padding:12px}
+        .admin-notif-all:hover{text-decoration:underline}
+
         .admin-dropdown-footer{display:flex;justify-content:center;align-items:center;gap:8px;padding:13px;font-size:12px;font-weight:750;color:#245fa6;text-decoration:none;background:#f8fbff}
         .admin-profile-link{display:flex;align-items:center;gap:10px;padding:13px 16px;width:100%;border:0;background:white;text-align:left;color:#334155;text-decoration:none;cursor:pointer;font:600 12px Arial,sans-serif}
         .admin-profile-link:hover{background:#f1f7ff}.admin-profile-logout{color:#b91c1c}
@@ -631,12 +642,10 @@
         }
     }
 
-    // Indikator ini adalah jumlah pengajuan BELUM DIPROSES,
-    // bukan jumlah notifikasi yang belum dibaca.
-    $pendingPengajuanCount = \App\Models\Pengajuan::query()->where('status', 'diproses')->count();
-    $pendingPengajuanList = \App\Models\Pengajuan::query()
-        ->with('user.mahasiswa')->where('status', 'diproses')
-        ->latest('created_at')->limit(5)->get();
+    // Lonceng Admin menampilkan notifikasi database akun yang login.
+    $adminUnreadCount = $adminAccount->unreadNotifications()->count();
+    $adminNotifications = $adminAccount->notifications()
+        ->latest('created_at')->limit(8)->get();
 @endphp
 
 @php
@@ -764,33 +773,52 @@
         <div class="user-info admin-top-controls">
             <div class="admin-dropdown-container" id="adminNotifRoot">
                 <button type="button" class="admin-icon-btn" id="adminNotifButton"
-                    aria-label="Pengajuan menunggu pemeriksaan: {{ $pendingPengajuanCount }}"
+                    aria-label="Notifikasi Admin, {{ $adminUnreadCount }} belum dibaca"
                     aria-haspopup="true" aria-expanded="false" aria-controls="adminNotifMenu">
-                    <i class="bi bi-bell"></i>
-                    @if($pendingPengajuanCount > 0)
-                        <span class="admin-notif-count">{{ $pendingPengajuanCount > 99 ? '99+' : $pendingPengajuanCount }}</span>
+                    <i class="bi bi-bell" aria-hidden="true"></i>
+                    @if($adminUnreadCount > 0)
+                        <span class="admin-notif-count">{{ $adminUnreadCount > 99 ? '99+' : $adminUnreadCount }}</span>
                     @endif
                 </button>
                 <div class="admin-dropdown admin-notif-menu" id="adminNotifMenu" hidden>
                     <div class="admin-dropdown-title">
-                        <strong>Pengajuan menunggu pemeriksaan</strong>
-                        <small>{{ $pendingPengajuanCount }} pengajuan diproses</small>
+                        <strong>Notifikasi SIMASTA</strong>
+                        <small>{{ $adminUnreadCount }} notifikasi belum dibaca</small>
                     </div>
                     <div class="admin-notif-list">
-                        @forelse($pendingPengajuanList as $pending)
-                            <a href="{{ route('admin.pengajuan.show', $pending) }}" class="admin-notif-item">
-                                <span class="admin-notif-mark"><i class="bi bi-file-earmark-text"></i></span>
-                                <span class="admin-notif-detail">
-                                    <strong>{{ $pending->user?->mahasiswa?->nama ?: ($pending->user?->name ?? 'Mahasiswa') }}</strong>
-                                    <small>Pengajuan magang perlu diperiksa</small>
-                                    <small>{{ $pending->created_at?->diffForHumans() }}</small>
-                                </span>
-                            </a>
+                        @forelse($adminNotifications as $notif)
+                            @php
+                                $isiNotif = is_array($notif->data) ? $notif->data : [];
+                                $notifTitle = $isiNotif['title'] ?? $isiNotif['judul'] ?? 'Informasi SIMASTA';
+                                $notifMessage = $isiNotif['message'] ?? $isiNotif['pesan'] ?? 'Ada pembaruan pengajuan magang.';
+                            @endphp
+                            <form method="POST" action="{{ route('admin.notifikasi.buka', $notif->id) }}" class="admin-notif-form">
+                                @csrf
+                                <button type="submit" class="admin-notif-item admin-notif-action {{ is_null($notif->read_at) ? 'is-unread' : '' }}">
+                                    <span class="admin-notif-mark"><i class="bi bi-file-earmark-text"></i></span>
+                                    <span class="admin-notif-detail">
+                                        <strong>{{ $notifTitle }}</strong>
+                                        <small>{{ $notifMessage }}</small>
+                                        <small>{{ $notif->created_at?->diffForHumans() }}</small>
+                                    </span>
+                                    @if(is_null($notif->read_at))
+                                        <span class="admin-notif-unread-dot" aria-label="Belum dibaca"></span>
+                                    @endif
+                                </button>
+                            </form>
                         @empty
-                            <div class="admin-notif-empty">Belum ada pengajuan yang menunggu pemeriksaan.</div>
+                            <div class="admin-notif-empty">Belum ada notifikasi untuk akun Admin ini.</div>
                         @endforelse
                     </div>
-                    <a class="admin-dropdown-footer" href="{{ route('admin.pengajuan.index') }}">Lihat semua pengajuan <i class="bi bi-arrow-right"></i></a>
+                    <div class="admin-notif-bottom">
+                        <a class="admin-dropdown-footer" href="{{ route('admin.pengajuan.index') }}">Lihat pengajuan <i class="bi bi-arrow-right"></i></a>
+                        @if($adminUnreadCount > 0)
+                            <form method="POST" action="{{ route('admin.notifikasi.baca-semua') }}">
+                                @csrf
+                                <button class="admin-notif-all" type="submit"><i class="bi bi-check2-all"></i> Tandai semua dibaca</button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
 

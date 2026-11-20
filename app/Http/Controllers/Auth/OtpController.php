@@ -22,6 +22,7 @@ class OtpController extends Controller
         return User::query()
             ->whereKey($id)
             ->where('role', 'mahasiswa')
+            ->where('is_active', true)
             ->first();
     }
 

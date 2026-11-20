@@ -15,6 +15,7 @@ use Illuminate\Notifications\Notifiable;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
+    protected $attributes = ['is_active' => true];
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -23,12 +24,21 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'presensi_migrated_at' => 'datetime',
         ];
     }
 
     public function isMahasiswa(): bool
     {
         return $this->role === 'mahasiswa';
+    }
+
+    public function requiresEmailVerification(): bool
+    {
+        // Existing presensi accounts keep their previous login access. New
+        // SIMASTA registrations must still finish email verification.
+        return $this->isMahasiswa() && !$this->email_verified_at && !$this->presensi_migrated_at;
     }
 
     public function isAdmin(): bool
@@ -43,7 +53,7 @@ class User extends Authenticatable
 
     public function pengajuan(): HasOne
     {
-        return $this->hasOne(Pengajuan::class);
+        return $this->hasOne(Pengajuan::class)->latestOfMany();
     }
 
     public function mahasiswa(): HasOne
@@ -109,6 +119,7 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             'admin' => route('admin.dashboard'),
+            'pembimbing' => route('pembimbing.dashboard'),
             default => route('mahasiswa.dashboard'),
         };
     }

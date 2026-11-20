@@ -1479,9 +1479,9 @@ table tbody tr:hover {
         <header class="topbar">
             <div class="topbar-title">@yield('page-title', 'Dashboard')</div>
             <div class="topbar-actions">
-                {{-- Lonceng mahasiswa: gunakan partial yang sudah ada, jangan gandakan data notifikasi. --}}
-                @if($simIsStudent && view()->exists('layouts.partials.lonceng'))
-                    @include('layouts.partials.lonceng')
+                {{-- Notifikasi pengajuan milik mahasiswa yang sedang login. --}}
+                @if($simIsStudent && view()->exists('partials.lonceng'))
+                    @include('partials.lonceng')
                 @endif
                 {{-- Lonceng Admin akan diaktifkan setelah rute dan sumber notifikasi Admin diaudit. --}}
                 @auth

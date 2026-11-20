@@ -2,6 +2,11 @@
 
 return [
 
+    'presensi' => [
+        'url' => env('PRESENSI_URL', 'https://presensi-simasta.bpskotabatu.com'),
+        'node_binary' => env('PRESENSI_NODE_BINARY', 'node'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

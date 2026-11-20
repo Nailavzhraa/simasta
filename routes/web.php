@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\PenempatanController;
 use App\Http\Controllers\Admin\LogbookController as AdminLogbookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\NotifikasiController as AdminNotifikasiController;
+use App\Http\Controllers\Mahasiswa\NotifikasiController as MahasiswaNotifikasiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,7 +68,7 @@ Route::post('/verifikasi-otp/kirim-ulang', [OtpController::class, 'resend'])->mi
 |--------------------------------------------------------------------------
 */
 
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +83,8 @@ Route::middleware(['auth', 'role:mahasiswa'])
         // Profil tetap terbuka bagi mahasiswa yang belum melengkapi data.
         Route::get('/profil', [ProfileController::class, 'show'])->name('profil');
         Route::post('/profil', [ProfileController::class, 'update'])->name('profil.simpan');
+        Route::post('/notifikasi/{notificationId}/buka', [MahasiswaNotifikasiController::class, 'buka'])->name('notifikasi.buka');
+        Route::post('/notifikasi/baca-semua', [MahasiswaNotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
 
         Route::middleware('profil.lengkap')->group(function () {
             Route::get('/dashboard', fn () => view('mahasiswa.dashboard'))->name('dashboard');
@@ -98,7 +101,7 @@ Route::middleware(['auth', 'role:mahasiswa'])
             Route::get('/penempatan', fn () => redirect('/mahasiswa/profil#posisi'))->name('penempatan');
 
             Route::middleware('magang.diterima')->group(function () {
-                Route::get('/presensi', fn () => view('mahasiswa.presensi'))->name('presensi');
+                Route::get('/presensi', fn () => redirect()->away(config('services.presensi.url')))->name('presensi');
                 Route::get('/logbook', [MahasiswaLogbookController::class, 'index'])->name('logbook');
                 Route::post('/logbook', [MahasiswaLogbookController::class, 'store'])->name('logbook.simpan');
                 Route::get('/penilaian', [MahasiswaPenilaianController::class, 'index'])->name('penilaian');
@@ -108,6 +111,10 @@ Route::middleware(['auth', 'role:mahasiswa'])
         });
     });
 
+
+Route::middleware(['auth', 'role:pembimbing'])
+    ->get('/pembimbing/dashboard', fn () => view('pembimbing.dashboard'))
+    ->name('pembimbing.dashboard');
 
 /*
 |--------------------------------------------------------------------------
@@ -392,6 +399,8 @@ if (app()->environment('local')) {
 
 }
 
+}
+
 // ========================================
 // LUPA DAN RESET KATA SANDI SIMASTA
 // ========================================
@@ -425,5 +434,3 @@ Route::middleware('guest')->group(function () {
       ->name('password.update');
 
 });
-
-}

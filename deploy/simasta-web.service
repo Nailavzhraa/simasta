@@ -1,0 +1,20 @@
+[Unit]
+Description=SIMASTA web on port 5013
+After=network.target simasta-php.service
+Requires=simasta-php.service
+
+[Service]
+Type=simple
+User=simasta
+Group=simasta
+ExecStart=/usr/sbin/nginx -c /etc/simasta/nginx-app.conf
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/simasta.bpskotabatu.com/storage
+
+[Install]
+WantedBy=multi-user.target

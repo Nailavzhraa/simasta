@@ -24,6 +24,9 @@ class PasswordResetController extends Controller
      */
     public function sendResetLinkEmail(Request $request)
     {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => strtolower(trim($request->input('email')))]);
+        }
         $request->validate([
             'email' => ['required', 'email'],
         ], [
@@ -67,6 +70,9 @@ class PasswordResetController extends Controller
      */
     public function reset(Request $request)
     {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => strtolower(trim($request->input('email')))]);
+        }
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
@@ -74,6 +80,11 @@ class PasswordResetController extends Controller
                 'required',
                 'string',
                 'min:8',
+                function ($attribute, $value, $fail) {
+                    if (is_string($value) && strlen($value) > 72) {
+                        $fail('Kata sandi maksimal 72 byte.');
+                    }
+                },
                 'confirmed',
             ],
         ], [

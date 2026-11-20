@@ -22,6 +22,9 @@ class AuthController extends Controller
 
     public function register(Request $r)
     {
+        if (is_string($r->input('email'))) {
+            $r->merge(['email' => strtolower(trim($r->input('email')))]);
+        }
         $data = $r->validate([
             'nama_lengkap' => [
                 'required',
@@ -41,7 +44,7 @@ class AuthController extends Controller
             'email' => [
                 'required',
                 'email',
-                'max:255',
+                'max:254',
                 'unique:users,email',
                 'unique:mahasiswas,email',
             ],
@@ -49,6 +52,11 @@ class AuthController extends Controller
                 'required',
                 'string',
                 'min:8',
+                function ($attribute, $value, $fail) {
+                    if (is_string($value) && strlen($value) > 72) {
+                        $fail('Password maksimal 72 byte.');
+                    }
+                },
                 'confirmed',
             ],
         ], [
@@ -138,6 +146,9 @@ class AuthController extends Controller
 
     public function login(Request $r)
     {
+        if (is_string($r->input('email'))) {
+            $r->merge(['email' => strtolower(trim($r->input('email')))]);
+        }
         $cred = $r->validate([
             'email' => [
                 'required',
@@ -148,7 +159,7 @@ class AuthController extends Controller
             ],
         ]);
 
-        if (!Auth::attempt($cred)) {
+        if (!Auth::attempt([...$cred, 'is_active' => true])) {
             return back()
                 ->withErrors([
                     'email' =>
@@ -166,8 +177,7 @@ class AuthController extends Controller
         */
 
         if (
-            $user->role === 'mahasiswa' &&
-            !$user->email_verified_at
+            $user->requiresEmailVerification()
         ) {
             Auth::logout();
 

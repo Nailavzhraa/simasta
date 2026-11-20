@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [\App\Http\Middleware\EnsureAccountActive::class]);
 
         // Alias middleware untuk pembatasan akses per role
         $middleware->alias([

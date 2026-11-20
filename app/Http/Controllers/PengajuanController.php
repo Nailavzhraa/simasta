@@ -13,17 +13,7 @@ class PengajuanController extends Controller
      */
     public function index()
     {
-        $pengajuan = Pengajuan::where(
-            'user_id',
-            Auth::id()
-        )
-        ->latest()
-        ->first();
-
-        return view(
-            'mahasiswa.pengajuan',
-            compact('pengajuan')
-        );
+        return redirect()->route('mahasiswa.dokumen');
     }
 
     /**

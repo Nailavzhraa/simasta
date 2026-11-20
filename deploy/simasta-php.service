@@ -1,0 +1,21 @@
+[Unit]
+Description=SIMASTA dedicated PHP-FPM
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=simasta
+Group=simasta
+WorkingDirectory=/var/www/simasta.bpskotabatu.com
+Environment=PHP_INI_SCAN_DIR=
+ExecStart=/var/www/simasta.bpskotabatu.com/runtime/usr/sbin/php-fpm8.4 -c /etc/simasta/php.ini -y /etc/simasta/php-fpm.conf --nodaemonize
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/simasta.bpskotabatu.com/storage /var/www/simasta.bpskotabatu.com/bootstrap/cache
+
+[Install]
+WantedBy=multi-user.target

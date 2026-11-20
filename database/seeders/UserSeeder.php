@@ -10,8 +10,13 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Akun contoh dengan password tetap hanya untuk pengembangan.
+        if (app()->environment('production')) {
+            return;
+        }
+
         // ADMIN
-        User::create([
+        User::firstOrCreate(['email' => 'admin@simasta.test'], [
             'name' => 'Admin SIMASTA',
             'email' => 'admin@simasta.test',
             'password' => Hash::make('admin12345'),
@@ -19,7 +24,7 @@ class UserSeeder extends Seeder
         ]);
 
         // PEMBIMBING
-        User::create([
+        User::firstOrCreate(['email' => 'pembimbing@simasta.test'], [
             'name' => 'Pembimbing Lapangan',
             'email' => 'pembimbing@simasta.test',
             'password' => Hash::make('pembimbing123'),

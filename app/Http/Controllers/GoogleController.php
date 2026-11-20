@@ -36,6 +36,7 @@ class GoogleController extends Controller
             return redirect('/login')->withErrors(['email' => 'Akun Google harus memiliki email yang sudah diverifikasi.']);
         }
 
+        $email = strtolower(trim($email));
         $user = User::where('google_id', $id)->first();
         if ($user) {
             return $this->loginUser($request, $user);
@@ -102,6 +103,9 @@ class GoogleController extends Controller
 
     private function loginUser(Request $request, User $user)
     {
+        if (!$user->is_active) {
+            return redirect('/login')->withErrors(['email' => 'Akun tidak aktif. Silakan hubungi admin.']);
+        }
         Auth::login($user);
         $request->session()->regenerate();
 

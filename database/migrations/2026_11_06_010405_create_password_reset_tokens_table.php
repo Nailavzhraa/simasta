@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Instalasi baru sudah membuat tabel ini pada migration users.
+        if (Schema::hasTable('password_reset_tokens')) {
+            return;
+        }
+
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
@@ -23,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('password_reset_tokens');
+        // Tabel dimiliki migration 0001_01_01_000000_create_users_table.
     }
 };
